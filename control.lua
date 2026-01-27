@@ -12,24 +12,16 @@ local gui = require("scripts.gui")
 
 script.on_init(function()
   battalion.init_storage()
-  
   company.init_storage()
-  
   platoon.init_storage()
-  
   squad.init_storage()
-  squad.register_events()
 end)
 
 script.on_configuration_changed(function()
   battalion.init_storage()
-  
   company.init_storage()
-  
   platoon.init_storage()
-  
   squad.init_storage()
-  squad.register_events()
 end)
 
 -- ============================================
@@ -70,20 +62,9 @@ script.on_event(defines.events.script_raised_destroy, on_destroyed, build_filter
 
 -- Periodic updates
 script.on_nth_tick(UPDATE_INTERVAL, function()
-  battalion.update_all()
-  company.update_all()
-  platoon.update_all()
   squad.update_all()
   squad.cleanup()
-
   gui.update_all()
-end)
-
--- AI command completed
-script.on_event(defines.events.on_ai_command_completed, function(event)
-  battalion.on_ai_command_completed(event)
-  company.on_ai_command_completed(event)
-  platoon.on_ai_command_completed(event)
 end)
 
 -- GUI events

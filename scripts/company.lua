@@ -40,10 +40,4 @@ function M.unregister_company(unit_number)
   storage.companies[unit_number] = nil
 end
 
-function M.update_all()
-end
-
-function M.on_ai_command_completed(event)
-end
-
 return M

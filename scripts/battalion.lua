@@ -88,19 +88,4 @@ function M.unregister_battalion(unit_number)
   storage.battalion_hqs[unit_number] = nil
 end 
 
--- ============================================
--- COMMAND COMPLETED EVENT
--- ============================================
-
-function M.on_ai_command_completed(event)
-end
-
--- ============================================
--- TICK UPDATE
--- ============================================
-
-function M.update_all()
-
-end
-
 return M

@@ -168,6 +168,7 @@ function gui.on_click(event)
     if player.gui.left.squad_frame then
       player.gui.left.squad_frame.destroy()
     end
+elseif element.name == "platoon_command_button" then
   end
 end
 

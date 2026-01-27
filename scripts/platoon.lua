@@ -35,6 +35,19 @@ end
 -- PLATOON MANAGEMENT
 -- ============================================
 
+function M.issue_platoon_command(platoon_id, position)
+    local platoon = storage.platoons[platoon_id]
+    if not platoon then return false end
+    for _, squad_id in pairs(platoon.squad_ids) do
+        squad.overide_command(squad_id, {
+            type = defines.command.attack_area,
+            destination = position,
+            radius = 10,
+            distraction = defines.distraction.by_enemy,
+        })
+    end
+end
+
 function M.register_platoon(entity)
   game.print("Registering platoon HQ with unit number: " .. entity.unit_number)
   storage.platoons[entity.unit_number] = {
@@ -45,14 +58,6 @@ end
 
 function M.unregister_platoon(unit_number)
   storage.platoons[unit_number] = nil
-end
-
-function M.on_ai_command_completed(event)
-end
-
-function M.update_all()
-  for unit_number, _ in pairs(storage.platoons) do
-  end
 end
 
 return M

@@ -4,7 +4,7 @@ local SOLDIERS_PER_SQUAD = 8
 local OPERATIONAL_THRESHOLD = 3  -- Minimum soldiers to remain operational
 local RETREAT_THRESHOLD = 2      -- Retreat when at or below this
 local SQUAD_OPERATIONAL_RADIUS = 500
-local COMMAND_TIMEOUT_TICKS = 60 * 30  -- 30 seconds before considering command stuck
+local COMMAND_TIMEOUT_TICKS = 60 * 60 * 5   -- 5 minutes before considering command stuck
 local STATUS = {
   IDLE = "idle",
   MOVING = "moving",
@@ -26,7 +26,6 @@ local ORDERS = {
 
 function M.init_storage()
   storage.squads = storage.squads or {}
-  storage.chunks = storage.chunks or game.surfaces[1].get_chunks()
 end
 
 -- ============================================
@@ -101,35 +100,7 @@ end
 -- ============================================
 
 function M.cleanup()
-  -- Collect squad IDs first to avoid modifying table during iteration
-  local to_remove = {}
-  for squad_id, squad_data in pairs(storage.squads) do
-    if not squad_data then
-      table.insert(to_remove, {id = squad_id, reason = "no squad_data"})
-    else
-      -- Count alive soldiers and clean up dead ones
-      local alive_soldiers = {}
-      if squad_data.soldiers then
-        for _, soldier in pairs(squad_data.soldiers) do
-          if soldier and soldier.valid then
-            table.insert(alive_soldiers, soldier)
-          end
-        end
-      end
-      squad_data.soldiers = alive_soldiers
-      
-      -- Check if unit_group is valid
-      local group_valid = squad_data.unit_group and squad_data.unit_group.valid
-      
-      if #alive_soldiers == 0 then
-        -- No soldiers left, mark for removal
-        if group_valid then
-          squad_data.unit_group.destroy()
-        end
-        table.insert(to_remove, {id = squad_id, reason = "all soldiers dead"})
-      end
-    end
-  end
+  
 end
 
 function M.update_all()
@@ -138,30 +109,47 @@ function M.update_all()
     for squad_id, squad_data in pairs(storage.squads) do
         if not squad_data then goto continue end
         
-        -- Chart area around valid squads (reveal fog of war)
-        if squad_data.unit_group and squad_data.unit_group.valid then
-            local pos = squad_data.unit_group.position
-            local surface = squad_data.unit_group.surface
-            local force = squad_data.unit_group.force
-            -- Reveal 32 tiles (1 chunk) around the squad
-            force.chart(surface, {
-                {pos.x - 32, pos.y - 32},
-                {pos.x + 32, pos.y + 32}
-            })
+        -- Skip invalid squads (will be cleaned up by cleanup())
+        if not squad_data.unit_group or not squad_data.unit_group.valid then
+            goto continue
         end
         
-        -- Check for stuck squads (command running too long)
-        if squad_data.status ~= STATUS.IDLE and squad_data.command_started_tick then
-            local elapsed = game.tick - squad_data.command_started_tick
-            if elapsed > COMMAND_TIMEOUT_TICKS then
-                game.print("[Squad " .. squad_id .. "] Command timed out after " .. math.floor(elapsed/60) .. "s, resetting")
-                squad_data.status = STATUS.IDLE
-                squad_data.command_started_tick = nil
-            end
+        -- Chart area around valid squads (reveal fog of war)
+        local pos = squad_data.unit_group.position
+        local surface = squad_data.unit_group.surface
+        local force = squad_data.unit_group.force
+        force.chart(surface, {
+            {pos.x - 32, pos.y - 32},
+            {pos.x + 32, pos.y + 32}
+        })
+
+        -- Sync status with actual unit_group command state
+        -- Commands persist across save/load, so check if unit_group actually has a command
+        local has_command = squad_data.unit_group.command ~= nil
+        if squad_data.status ~= STATUS.IDLE and not has_command then
+            -- We think we're moving, but unit_group has no command (completed during save/load)
+            squad_data.status = STATUS.IDLE
+            squad_data.command_started_tick = nil
+        elseif squad_data.status == STATUS.IDLE and has_command then
+            -- We think we're idle, but unit_group has a command (state mismatch)
+            squad_data.status = STATUS.MOVING
         end
+        
+        -- -- Check for stuck squads (command running too long)
+        -- if squad_data.status ~= STATUS.IDLE and squad_data.command_started_tick then
+        --     local elapsed = game.tick - squad_data.command_started_tick
+        --     if elapsed > COMMAND_TIMEOUT_TICKS then
+        --         game.print("[Squad " .. squad_id .. "] Command timed out after " .. math.floor(elapsed/60) .. "s, resetting")
+        --         squad_data.status = STATUS.IDLE
+        --         squad_data.command_started_tick = nil
+        --     end
+        -- end
 
         if M.is_squad_operational(squad_id) and squad_data.status == STATUS.IDLE then
             M.next_order(squad_id)
+        end
+        if M.is_squad_retreatable(squad_id) and M.is_squad_operational(squad_id) then
+            M.retreat_squad(squad_id)
         end
         ::continue::
     end
@@ -181,7 +169,7 @@ function M.next_order(squad_id)
     if M.is_squad_operational(squad_id) and squad_data.status == STATUS.IDLE then
         if false then return -- if battalion order - execute it
         elseif false then return -- elseif platoon order - execute it
-        elseif (#area.unexplored > 0) then M.squad_explore(squad_id, area.unexplored[1].world) return -- elseif explore order - continue exploring
+        elseif (#area.unexplored > 0) then M.squad_explore(squad_id, area.unexplored[math.random(1, #area.unexplored)].world) return -- elseif explore order - continue exploring
         else M.squad_patrol(squad_id) end -- else patrole around HQ
     else
         -- Not operational, return to base
@@ -248,15 +236,14 @@ function M.squad_explore(squad_id, target)
   squad_data.unit_group.set_command({
     type = defines.command.go_to_location,
     destination = target,
-    radius = 2,
+    radius = 5,
     distraction = defines.distraction.by_enemy,
   })
-  return true
 end
 
 function M.squad_patrol(squad_id)
   local squad_data = M.get_valid_squad(squad_id)
-  if not squad_data then return false end
+  if not squad_data then return end
   
   -- Pick a random point within operational radius of HQ
   local angle = math.random() * 2 * math.pi
@@ -275,7 +262,6 @@ function M.squad_patrol(squad_id)
     radius = 5,
     distraction = defines.distraction.by_enemy,
   })
-  return true
 end
 
 -- ===========================================
@@ -316,6 +302,34 @@ function M.on_squad_created(event)
     } 
 end
 
+function M.on_entity_died(event)
+    game.print("Entity died: " .. tostring(event.entity.name))
+    local squad_data = M.get_valid_squad(event.unit_number)
+    if not squad_data then return end
+
+    if M.is_squad_retreatable(event.unit_number) then
+        M.retreat_squad(event.unit_number)
+    end
+    if event.entity.name ~= "soldier-unit"
+        then event.entity.destroy() return end
+end
+
+function M.despawn_soldier(event)
+    local surface = game.players[1].surface
+    local soldiers = surface.find_entities_filtered{
+        name = "soldier-unit",
+    }
+    local soldier_id = event.unit_number
+  for squad_id, squad_data in pairs(storage.squads) do
+    for i, soldier in pairs(squad_data.soldiers) do
+      if soldier and soldier.valid and soldier.unit_number == soldier_id then
+        soldier.destroy()
+        table.remove(squad_data.soldiers, i)
+        return
+      end
+    end
+  end
+end
 -- ===========================================
 -- EVENTS REGISTRATION
 -- ===========================================
@@ -323,44 +337,32 @@ end
 function M.register_events()
     script.on_event(defines.events.on_ai_command_completed, M.on_ai_command_completed)
     script.on_event(defines.events.on_unit_group_created, M.on_squad_created)
+    script.on_event(defines.events.on_entity_died, M.on_entity_died)
+    script.on_event(defines.events.on_unit_removed_from_group, M.despawn_soldier)
 end
 
 -- ============================================
 -- HELPER FUNCTIONS
 -- ============================================
 
-function M.is_squad_operational(squad_id)
+-- Get live soldier count directly from unit_group (most reliable)
+function M.get_soldier_count(squad_id)
   local squad_data = M.get_valid_squad(squad_id)
-  if not squad_data then return false end
+  if not squad_data then return 0 end
   
-  local count = 0
-  for _, soldier in pairs(squad_data.soldiers) do
-    if soldier and soldier.valid then
-      count = count + 1
-    end
+  -- unit_group.members is the authoritative list
+  if squad_data.unit_group and squad_data.unit_group.valid then
+    return #squad_data.unit_group.members
   end
-  if count >= OPERATIONAL_THRESHOLD then
-    return true
-  else
-    return false
-  end
+  return 0
+end
+
+function M.is_squad_operational(squad_id)
+  return M.get_soldier_count(squad_id) >= OPERATIONAL_THRESHOLD
 end
 
 function M.is_squad_retreatable(squad_id)
-  local squad_data = M.get_valid_squad(squad_id)
-  if not squad_data then return false end
-  
-  local count = 0
-  for _, soldier in pairs(squad_data.soldiers) do
-    if soldier and soldier.valid then
-      count = count + 1
-    end
-  end
-  if count <= RETREAT_THRESHOLD then
-    return true
-  else
-    return false
-  end
+  return M.get_soldier_count(squad_id) <= RETREAT_THRESHOLD
 end
 
 function M.get_explorable_area(surface, force, center_pos, radius)
@@ -406,11 +408,10 @@ end
 
 function M.get_valid_squad(squad_id)
     local squad_data = storage.squads[squad_id]
-    if not squad_data then return nil end
+    if not squad_data then game.print("Squad not found: " .. tostring(squad_id)) return end
     if not squad_data.unit_group or not squad_data.unit_group.valid then 
         game.print("Invalid squad ID: " .. tostring(squad_id))
-        storage.squads[squad_id] = nil
-        return nil end
+        return end
     -- delete invalid squads
 
     return squad_data
