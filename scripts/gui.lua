@@ -71,16 +71,18 @@ function gui.create_squad_table(player)
   local table = scroll.add{
     type = "table",
     name = "squad_table",
-    column_count = 6,
+    column_count = 8,
   }
   
   -- Header row
   table.add{type = "label", caption = "[color=yellow]ID[/color]"}
   table.add{type = "label", caption = "[color=yellow]Soldiers[/color]"}
+  table.add{type = "label", caption = "[color=yellow]Integrity[/color]"}
   table.add{type = "label", caption = "[color=yellow]Status[/color]"}
   table.add{type = "label", caption = "[color=yellow]Position[/color]"}
   table.add{type = "label", caption = "[color=yellow]Valid[/color]"}
-  table.add{type = "label", caption = "[color=yellow]Command[/color]"}
+  table.add{type = "label", caption = "[color=yellow]Can Reinforce[/color]"}
+  table.add{type = "label", caption = "[color=yellow]HQ Reinforcements[/color]"}
   
   gui.update_squad_table(player)
 end
@@ -96,8 +98,8 @@ function gui.update_squad_table(player)
   if not tbl then return end
   
   -- Clear existing rows (keep header - first 5 elements)
-  while #tbl.children > 6 do
-    tbl.children[7].destroy()
+  while #tbl.children > 8 do
+    tbl.children[9].destroy()
   end
   
   -- Populate with squad data
@@ -110,43 +112,60 @@ function gui.update_squad_table(player)
   for squad_id, squad_data in pairs(storage.squads) do
     count = count + 1
     
-    -- Count valid soldiers
-    local soldier_count = 0
-    if squad_data.soldiers then
-      for _, soldier in pairs(squad_data.soldiers) do
-        if soldier and soldier.valid then
-          soldier_count = soldier_count + 1
-        end
-      end
-    end
-    
     -- Get position from unit_group if valid
     local pos_str = "N/A"
     local valid_str = "[color=red]No[/color]"
+    local member_count = 0
     if squad_data.unit_group and squad_data.unit_group.valid then
       local pos = squad_data.unit_group.position
       pos_str = string.format("%.0f, %.0f", pos.x, pos.y)
       valid_str = "[color=green]Yes[/color]"
+      member_count = #squad_data.unit_group.members
     end
     
     -- Status color
     local status = squad_data.status or "unknown"
     local status_str = status
-    if status == "idle" then
-      status_str = "[color=gray]idle[/color]"
-    elseif status == "moving" then
-      status_str = "[color=green]moving[/color]"
+    if status == "operational" then
+      status_str = "[color=green]operational[/color]"
     elseif status == "retreating" then
       status_str = "[color=red]retreating[/color]"
     end
+
+    -- Integrity color
+    local integrity = squad_data.integrity or "unknown"
+    local integrity_str = integrity
+    if integrity == "full_strength" then
+      integrity_str = "[color=green]full_strength[/color]"
+    elseif integrity == "needs_reinforcements" then
+      integrity_str = "[color=yellow]needs_reinforcements[/color]"
+    end
     
+    -- Can reinforce
+    local can_reinforce = "N/A"
+    if squad.can_reinforce(squad_id) then
+      can_reinforce = "[color=green](can reinforce)[/color]"
+    else
+      can_reinforce = "[color=red](cannot reinforce)[/color]"
+    end
+
+    -- HQ has reinforcements
+    local reinforcements_available = "N/A"
+    if squad.reinforcements_available(squad_id) then
+      reinforcements_available = "[color=green](HQ has reinforcements)[/color]"
+    else
+      reinforcements_available = "[color=red](HQ no reinforcements)[/color]"
+    end
+
     -- Add row
     tbl.add{type = "label", caption = tostring(squad_id)}
-    tbl.add{type = "label", caption = soldier_count .. "/8"}
+    tbl.add{type = "label", caption = member_count .. "/8"}
+    tbl.add{type = "label", caption = integrity_str}
     tbl.add{type = "label", caption = status_str}
     tbl.add{type = "label", caption = pos_str}
     tbl.add{type = "label", caption = valid_str}
-    tbl.add{type = "label", caption = squad_data.command or "N/A"}
+    tbl.add{type = "label", caption = can_reinforce}
+    tbl.add{type = "label", caption = reinforcements_available}
   end  
 end
 

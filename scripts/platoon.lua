@@ -52,7 +52,7 @@ function M.register_platoon(entity)
   game.print("Registering platoon HQ with unit number: " .. entity.unit_number)
   storage.platoons[entity.unit_number] = {
     entity = entity,
-    squad_ids = squad.create_squads_for_platoon(entity.surface, entity.position, entity.force, SQUADS_PER_PLATOON),
+    squad_ids = squad.create_squads_for_platoon(entity.surface, entity.position, entity.force, entity.unit_number, SQUADS_PER_PLATOON),
   }
 end
 

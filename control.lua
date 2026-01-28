@@ -50,6 +50,8 @@ local function on_destroyed(event)
   platoon.on_destroyed(event)
 end
 
+squad.register_events()
+
 script.on_event(defines.events.on_built_entity, on_built, build_filter)
 script.on_event(defines.events.on_robot_built_entity, on_built, build_filter)
 script.on_event(defines.events.script_raised_built, on_built, build_filter)
