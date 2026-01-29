@@ -3,9 +3,8 @@ local M = {}
 local SOLDIERS_PER_SQUAD = 8
 local OPERATIONAL_THRESHOLD = 3  -- Minimum soldiers to remain operational
 local RETREAT_THRESHOLD = 2      -- Retreat when at or below this
-local SQUAD_OPERATIONAL_RADIUS = 500
+local SQUAD_OPERATIONAL_RADIUS = 300
 local HQ_REINFORCEMENT_RADIUS = 10
-local COMMAND_TIMEOUT_TICKS = 60 * 60 * 5   -- 5 minutes before considering command stuck
 local STATUS = {
   OPERATIONAL = "operational",
   RETREATING = "retreating",
@@ -16,12 +15,21 @@ local INTEGRITY = {
   NEEDS_REINFORCEMENTS = "needs_reinforcements",
 }
 
+local PATHFINDER_FLAGS = {
+    allow_destroy_friendly_entities = false,
+    allow_paths_through_own_entities = true,
+    cache = false,
+    prefer_straight_paths = true,
+    low_priority = false,
+    no_break = true,
+}
 -- ============================================
 -- STORAGE INITIALIZATION
 -- ============================================
 
 function M.init_storage()
   storage.squads = storage.squads or {}
+  storage.cleanup_queue = storage.cleanup_queue or {}
 end
 
 -- ============================================
@@ -98,9 +106,19 @@ function M.reinforce_squad(squad_id)
   
   local surface = squad_data.unit_group.surface
   local force = squad_data.unit_group.force
+  local hq = surface.find_entity("platoon-hq", squad_data.hq_position)
+  if not hq or not hq.valid then return end
+  
+  local hq_inventory = hq.get_inventory(defines.inventory.chest)
+  if not hq_inventory then return end
   
   for i = #squad_data.unit_group.members, SOLDIERS_PER_SQUAD - 1 do
-    -- Find spawn position near HQ
+    if hq_inventory.get_item_count("soldier-token") <= 0 then
+        game.print("No more soldier-tokens available for reinforcement!")
+        return
+    end
+    hq_inventory.remove({name = "soldier-token", count = 1})
+
     local spawn_pos = surface.find_non_colliding_position("soldier-unit", squad_data.hq_position, HQ_REINFORCEMENT_RADIUS, 0.5)
     if not spawn_pos then
       game.print("Could not find spawn position for reinforcement!")
@@ -117,7 +135,6 @@ function M.reinforce_squad(squad_id)
       squad_data.unit_group.add_member(soldier)
     end
   end
-  squad_data.integrity = INTEGRITY.FULL_STRENGTH
 end
 
 -- ============================================
@@ -127,9 +144,58 @@ end
 function M.cleanup(squad_id)
     local squad_data = storage.squads[squad_id]
     if not squad_data then return end
-    if not squad_data.unit_group or not squad_data.unit_group.valid then
-        storage.squads[squad_id] = nil
+    
+    -- Unit group is still valid - nothing to clean up
+    if squad_data.unit_group and squad_data.unit_group.valid then
+        return
     end
+    
+    -- Unit group invalid - try to recover with surviving soldiers
+    local surviving_soldiers = {}
+    if squad_data.soldiers then
+        for _, soldier in pairs(squad_data.soldiers) do
+            if soldier and soldier.valid then
+                -- Only take soldiers not already in a valid group
+                if not soldier.unit_group or not soldier.unit_group.valid then
+                    table.insert(surviving_soldiers, soldier)
+                end
+            end
+        end
+    end
+    
+    if #surviving_soldiers > 0 then
+        -- Create new unit group from survivors
+        local first = surviving_soldiers[1]
+        local new_group = first.surface.create_unit_group({
+            position = first.position,
+            force = first.force,
+        })
+        
+        if new_group and new_group.valid then
+            for _, soldier in pairs(surviving_soldiers) do
+                new_group.add_member(soldier)
+            end
+            
+            -- Migrate to new squad entry (new unique_id)
+            local new_squad_id = new_group.unique_id
+            storage.squads[new_squad_id] = {
+                unit_group = new_group,
+                soldiers = surviving_soldiers,
+                command = squad_data.command or "none",
+                hq_position = squad_data.hq_position,
+                status = STATUS.IDLE,
+                command_started_tick = nil,
+                integrity = squad_data.integrity,
+            }
+            storage.squads[squad_id] = nil  -- Remove old entry
+            game.print("[Squad " .. squad_id .. " -> " .. new_squad_id .. "] Recovered with " .. #surviving_soldiers .. " soldiers")
+            return
+        end
+    end
+    
+    -- No survivors or failed to create group - remove squad
+    game.print("[Squad " .. squad_id .. "] Lost - no survivors")
+    storage.squads[squad_id] = nil
 end
 
 function M.update_all()
@@ -237,6 +303,7 @@ function M.move_squad_to_position(squad_id, position)
       destination = position,
       radius = 2,
       distraction = defines.distraction.by_enemy,
+        pathfind_flags = PATHFINDER_FLAGS,
     })
 end
 
@@ -248,6 +315,7 @@ function M.return_to_base(squad_id)
       destination = squad_data.hq_position,
       radius = 5,
       distraction = defines.distraction.by_enemy,
+      pathfind_flags = PATHFINDER_FLAGS,
     })
 end
 
@@ -259,6 +327,7 @@ function M.retreat_squad(squad_id)
       destination = squad_data.hq_position,
       radius = 5,
       distraction = defines.distraction.none,
+      pathfind_flags = PATHFINDER_FLAGS,
     })
 end
 
@@ -270,6 +339,7 @@ function M.squad_explore(squad_id, target)
     destination = target,
     radius = 5,
     distraction = defines.distraction.by_enemy,
+    pathfind_flags = PATHFINDER_FLAGS,
   })
 end
 
@@ -284,14 +354,13 @@ function M.squad_patrol(squad_id)
     x = squad_data.hq_position.x + math.cos(angle) * dist,
     y = squad_data.hq_position.y + math.sin(angle) * dist,
   }
-  
-  squad_data.status = STATUS.OPERATIONAL
-  squad_data.command_started_tick = game.tick
+
   squad_data.unit_group.set_command({
     type = defines.command.go_to_location,
     destination = target,
     radius = 5,
     distraction = defines.distraction.by_enemy,
+    pathfind_flags = PATHFINDER_FLAGS,
   })
 end
 
@@ -330,8 +399,7 @@ function M.despawn_soldier(event)
     game.print(serpent.block(event))
     local soldier = event.unit
     if soldier and soldier.valid and soldier.name == "soldier-unit" then
-        soldier.destroy()
-        game.print("removed orphaned soldier unit")
+        event.group.add_member(soldier)
     end
 end
 -- ===========================================
@@ -395,8 +463,47 @@ function M.can_reinforce(squad_id)
     end
 end
 
+function M.get_reinforcements_available(squad_id)
+    local squad_data = M.get_valid_squad(squad_id)
+    if not squad_data then return 0 end
+
+    local hq = squad_data.unit_group.surface.find_entity("platoon-hq", squad_data.hq_position)
+    if not hq or not hq.valid then
+        return 0
+    end
+    local hq_inventory = hq.get_inventory(defines.inventory.chest)
+    if not hq_inventory then
+        return 0
+    end
+
+    local item_count = hq_inventory.get_item_count("soldier-token")
+    if not item_count then
+        return 0
+    end
+    return item_count
+end
+
 function M.reinforcements_available(squad_id)
-    -- Placeholder: always return true for now
+    local squad_data = M.get_valid_squad(squad_id)
+    if not squad_data then return false end
+    
+    local hq = squad_data.unit_group.surface.find_entity("platoon-hq", squad_data.hq_position)
+    if not hq or not hq.valid then
+        return false
+    end
+    local hq_inventory = hq.get_inventory(defines.inventory.chest)
+    if not hq_inventory then
+        return false
+    end
+
+    local item_count = hq_inventory.get_item_count("soldier-token")
+    if not item_count then
+        return false
+    end
+
+    if item_count <= 0 then
+        return false
+    end
     return true
 end
 

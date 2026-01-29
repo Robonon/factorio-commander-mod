@@ -26,6 +26,7 @@ entities.soldier = {
   idle_animation = character.animations[1].idle_with_gun,
   vision_distance = 30,
   has_belt_immunity = true,
+  can_open_gates = true,  -- Allows soldiers to trigger gates
   ai_settings = {
     destroy_when_commands_fail = false,
     allow_try_return_to_spawner = false,

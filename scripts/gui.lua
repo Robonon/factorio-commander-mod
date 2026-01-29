@@ -2,10 +2,7 @@
 local squad = require("scripts.squad")
 local gui = {}
 
--- ============================================
--- CREATE GUI
--- ============================================
-
+-- Create gui buttons
 function gui.create_buttons(player)
   if player.gui.top.commander_flow then return end
   
@@ -22,10 +19,7 @@ function gui.create_buttons(player)
   }
 end
 
--- ============================================
--- SQUAD TABLE GUI
--- ============================================
-
+-- Create squad table
 function gui.create_squad_table(player)
   if player.gui.left.squad_frame then
     player.gui.left.squad_frame.destroy()
@@ -39,7 +33,6 @@ function gui.create_squad_table(player)
     direction = "vertical",
   }
   
-  -- Add close button flow
   local title_flow = frame.add{
     type = "flow",
     name = "title_flow",
@@ -58,7 +51,6 @@ function gui.create_squad_table(player)
     style = "mini_button",
   }
   
-  -- Scrollable pane for the table
   local scroll = frame.add{
     type = "scroll-pane",
     name = "squad_scroll",
@@ -67,14 +59,12 @@ function gui.create_squad_table(player)
   }
   scroll.style.maximal_height = 400
   
-  -- Create table
   local table = scroll.add{
     type = "table",
     name = "squad_table",
     column_count = 8,
   }
   
-  -- Header row
   table.add{type = "label", caption = "[color=yellow]ID[/color]"}
   table.add{type = "label", caption = "[color=yellow]Soldiers[/color]"}
   table.add{type = "label", caption = "[color=yellow]Integrity[/color]"}
@@ -97,12 +87,10 @@ function gui.update_squad_table(player)
   local tbl = scroll.squad_table
   if not tbl then return end
   
-  -- Clear existing rows (keep header - first 5 elements)
   while #tbl.children > 8 do
     tbl.children[9].destroy()
   end
   
-  -- Populate with squad data
   if not storage.squads then 
     player.print("No storage.squads found")
     return 
@@ -112,7 +100,6 @@ function gui.update_squad_table(player)
   for squad_id, squad_data in pairs(storage.squads) do
     count = count + 1
     
-    -- Get position from unit_group if valid
     local pos_str = "N/A"
     local valid_str = "[color=red]No[/color]"
     local member_count = 0
@@ -169,10 +156,7 @@ function gui.update_squad_table(player)
   end  
 end
 
--- ============================================
 -- HANDLE BUTTON CLICK
--- ============================================
-
 function gui.on_click(event)
   local element = event.element
   if not element or not element.valid then return end
@@ -191,20 +175,14 @@ elseif element.name == "platoon_command_button" then
   end
 end
 
--- ============================================
 -- EVENT HANDLERS
--- ============================================
-
 function gui.update_all()
   for _, player in pairs(game.connected_players) do
     gui.update_squad_table(player)
   end
 end
 
--- ============================================
 -- INIT
--- ============================================
-
 function gui.init_player(player)
   gui.create_buttons(player)
   gui.create_squad_table(player)
