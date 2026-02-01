@@ -57,15 +57,11 @@ local function highlight_platoon(pi, platoon_id)
   for _, sid in pairs(pd.squad_ids) do
     local sd = storage.squads and storage.squads[sid]
     if sd and sd.unit_group and sd.unit_group.valid then
-      local members, cx, cy, count = sd.unit_group.members, 0, 0, 0
+      local members = sd.unit_group.members
       for _, soldier in pairs(members) do
         if soldier.valid then
-          cx, cy, count = cx + soldier.position.x, cy + soldier.position.y, count + 1
           table.insert(renders, rendering.draw_circle{color = {r = 1, g = 0.6, b = 0, a = 0.8}, radius = 0.6, width = 3, target = soldier, surface = soldier.surface, players = {player}, draw_on_ground = true})
         end
-      end
-      if count > 0 then
-        table.insert(renders, rendering.draw_circle{color = {r = 1, g = 0.6, b = 0, a = 0.5}, radius = 3.5, width = 4, target = {cx / count, cy / count}, surface = sd.unit_group.surface, players = {player}, draw_on_ground = true, filled = false})
       end
     end
   end
