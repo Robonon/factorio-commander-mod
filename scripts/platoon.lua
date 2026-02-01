@@ -1,5 +1,4 @@
 local squad = require("scripts.squad")
-
 local M = {}
 
 local SQUADS_PER_PLATOON = 3
@@ -39,7 +38,9 @@ function M.issue_platoon_command(platoon_id, position)
     local platoon = storage.platoons[platoon_id]
     if not platoon then return false end
     for _, squad_id in pairs(platoon.squad_ids) do
-        squad.overide_command(squad_id, {
+
+        squad.next_order(squad_id,
+        {
             type = defines.command.attack_area,
             destination = position,
             radius = 10,
@@ -59,5 +60,11 @@ end
 function M.unregister_platoon(unit_number)
   storage.platoons[unit_number] = nil
 end
+
+  --- ===========================================
+  --- EVENTS
+  --- ===========================================
+  --- 
+
 
 return M

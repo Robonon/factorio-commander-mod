@@ -29,12 +29,23 @@ data:extend{
   recipes.soldier_token,
 }
 
--- Register custom inputs (keybinds)
-for _, input in ipairs(tools.inputs) do
-  data:extend{input}
-end
-
 -- Register selection tools
 for _, tool in ipairs(tools.selection_tools) do
   data:extend{tool}
 end
+
+-- icons
+data:extend({
+  {
+    type = "virtual-signal",
+    name = "nato-platoon-signal",
+    icon = "__commander__/assets/platoon.png",
+    icon_size = 32
+  },
+  {
+    type = "virtual-signal",
+    name = "nato-squad-signal",
+    icon = "__commander__/assets/squad.png",
+    icon_size = 32
+  },
+})

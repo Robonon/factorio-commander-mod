@@ -1,5 +1,4 @@
 local M = {}
-
 local SOLDIERS_PER_SQUAD = 8
 local OPERATIONAL_THRESHOLD = 3  -- Minimum soldiers to remain operational
 local RETREAT_THRESHOLD = 2      -- Retreat when at or below this
@@ -45,6 +44,7 @@ function M.create_squads_for_platoon(surface, position, force, platoon_id, num_s
 end
 
 function M.create_squad(surface, position, force, platoon_id)
+
   -- Find spawn position
   local spawn_pos = surface.find_non_colliding_position("soldier-unit", position, 10, 0.5)
   if not spawn_pos then
@@ -198,6 +198,7 @@ function M.cleanup(squad_id)
     storage.squads[squad_id] = nil
 end
 
+
 function M.update_all()
     if not storage.squads then return end
 
@@ -228,12 +229,12 @@ function M.update_all()
         --     end
         -- end
 
-        M.update_status(squad_id)
-        M.update_integrity(squad_id)
+        -- M.update_status(squad_id)
+        -- M.update_integrity(squad_id)
         
-        if not squad_data.unit_group.has_command then
-            M.next_order(squad_id)
-        end
+        -- if not squad_data.unit_group.has_command then
+        --     M.next_order(squad_id)
+        -- end
         ::continue::
     end
 end
@@ -265,7 +266,7 @@ function M.update_integrity(squad_id)
         squad_data.integrity = INTEGRITY.FULL_STRENGTH
     end
 end
-function M.next_order(squad_id)
+function M.next_order(squad_id, platoon_order, battalion_order, brigade_order)
     local squad_data = M.get_valid_squad(squad_id)
     if not squad_data then return end
     
@@ -277,17 +278,18 @@ function M.next_order(squad_id)
 
     -- Decide next order
     if squad_data.status == STATUS.OPERATIONAL then
-        if false then return -- if battalion order - execute it
-        elseif false then return -- elseif platoon order - execute it
-        elseif (#area.unexplored > 0) then M.squad_explore(squad_id, area.unexplored[math.random(1, #area.unexplored)].world) return -- elseif explore order - continue exploring
-        else M.squad_patrol(squad_id) end -- else patrole around HQ     
+        if brigade_order then squad_data.unit_group.set_command(brigade_order) return -- if brigade order - execute it
+        elseif battalion_order then squad_data.unit_group.set_command(battalion_order) return -- if battalion order - execute it
+        elseif platoon_order then squad_data.unit_group.set_command(platoon_order) return -- elseif platoon order - execute it
+        -- elseif (#area.unexplored > 0) then M.squad_explore(squad_id, area.unexplored[math.random(1, #area.unexplored)].world) return -- elseif explore order - continue exploring
+        -- else M.squad_patrol(squad_id) end -- else patrole around HQ
+        else 
+          M.return_to_base(squad_id) 
+        end
     elseif squad_data.status == STATUS.RETREATING then
         M.retreat_squad(squad_id)
     elseif M.needs_reinforcements(squad_id)and M.can_reinforce(squad_id) and M.reinforcements_available(squad_id)  then
         M.reinforce_squad(squad_id)
-    else
-        -- Not operational, return to base
-        M.return_to_base(squad_id)
     end
 end
 
@@ -371,32 +373,31 @@ end
 function M.on_ai_command_completed(event)
   local squad_data = M.get_valid_squad(event.unit_number)
   if not squad_data then return end
+  M.update_integrity(event.unit_number)
+  M.update_status(event.unit_number)
   M.next_order(event.unit_number)
 end
 
 function M.on_squad_retreat(event)
-    if not M.is_squad_operational(event.unit_number) then
+    if M.is_squad_retreatable(event.unit_number) then
         M.retreat_squad(event.unit_number)
     end
-end
-
-function M.on_squad_abort_mission(event)
-    M.return_to_base(event.unit_number)
 end
 
 function M.on_entity_died(event)
     game.print("Entity died: " .. tostring(event.entity.name))
     local squad_data = M.get_valid_squad(event.unit_number)
     if not squad_data then return end
+    
+    M.update_integrity(event.unit_number)
+    M.update_status(event.unit_number)
 
     if M.is_squad_retreatable(event.unit_number) and squad_data.status ~= STATUS.RETREATING then
-        M.update_status(event.unit_number)
         M.retreat_squad(event.unit_number)
     end
 end
 
-function M.despawn_soldier(event)
-    game.print(serpent.block(event))
+function M.try_recover_soldier(event)
     local soldier = event.unit
     if soldier and soldier.valid and soldier.name == "soldier-unit" then
         event.group.add_member(soldier)
@@ -408,9 +409,9 @@ end
 
 function M.register_events()
     script.on_event(defines.events.on_ai_command_completed, M.on_ai_command_completed)
-    script.on_event(defines.events.on_unit_group_created, M.on_squad_created)
+    -- script.on_event(defines.events.on_unit_group_created, M.on_squad_created)
     script.on_event(defines.events.on_entity_died, M.on_entity_died)
-    script.on_event(defines.events.on_unit_removed_from_group, M.despawn_soldier)
+    script.on_event(defines.events.on_unit_removed_from_group, M.try_recover_soldier)
 end
 
 -- ============================================
