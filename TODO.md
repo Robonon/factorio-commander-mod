@@ -2,12 +2,12 @@ THING NOT WORKING
 
 - Orphaned soldiers, how to handle?
 - tweak pathfinding
-- handle platoon selection better with the command order tool, to no spawn tool when deselecting platoon, or deselect when tool is used
-- command order on map
-- destroy map tag if squad is destroyed
+- destroy squad map tag if squad is destroyed
 - re-create squad if squad is destroyed
 - display squad status on platoon bar
-- destroy platoon on hq removed or destroyed?
+- destroy squads on platoon hq removed or destroyed?
+- limit HQ buildings untill higher tier built
+- Disallow placement of multiple HQ buildings within a radius of eachother
 
 FEATURES
 - spawn squad use soldier tokens
