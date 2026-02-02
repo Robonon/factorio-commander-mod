@@ -3,7 +3,7 @@ local SOLDIERS_PER_SQUAD = 8
 local OPERATIONAL_THRESHOLD = 3  -- Minimum soldiers to remain operational
 local RETREAT_THRESHOLD = 2      -- Retreat when at or below this
 local SQUAD_OPERATIONAL_RADIUS = 300
-local HQ_REINFORCEMENT_RADIUS = 10
+local HQ_REINFORCEMENT_RADIUS = 30
 local STATUS = {
   OPERATIONAL = "operational",
   RETREATING = "retreating",
@@ -94,9 +94,11 @@ function M.create_squad(surface, position, force, platoon_id)
     unit_group = unit_group,
     soldiers = soldiers,
     hq_position = position,
-    status = STATUS.REINFORCING,
+    status = STATUS.OPERATIONAL,
     integrity = INTEGRITY.FULL_STRENGTH,
   }
+  M.update_integrity(squad_id)
+  M.update_status(squad_id)
   return squad_id
 end
 
@@ -135,6 +137,8 @@ function M.reinforce_squad(squad_id)
       squad_data.unit_group.add_member(soldier)
     end
   end
+  M.update_integrity(squad_id)
+  M.update_status(squad_id)
 end
 
 -- ============================================
@@ -183,8 +187,7 @@ function M.cleanup(squad_id)
                 soldiers = surviving_soldiers,
                 command = squad_data.command or "none",
                 hq_position = squad_data.hq_position,
-                status = STATUS.IDLE,
-                command_started_tick = nil,
+                status = squad_data.status,
                 integrity = squad_data.integrity,
             }
             storage.squads[squad_id] = nil  -- Remove old entry
@@ -266,31 +269,34 @@ function M.update_integrity(squad_id)
         squad_data.integrity = INTEGRITY.FULL_STRENGTH
     end
 end
-function M.next_order(squad_id, platoon_order, battalion_order, brigade_order)
+function M.next_order(squad_id, order)
     local squad_data = M.get_valid_squad(squad_id)
     if not squad_data then return end
-    
-    local area = M.get_explorable_area(squad_data.unit_group.surface, squad_data.unit_group.force, squad_data.hq_position, SQUAD_OPERATIONAL_RADIUS)
-    if area.unexplored and #area.unexplored > 0 then
-        -- Prioritize unexplored chunks
-        table.sort(area.unexplored, function(a, b) return a.distance < b.distance end)     
-    end
+
+    -- local area = M.get_explorable_area(squad_data.unit_group.surface, squad_data.unit_group.force, squad_data.hq_position, SQUAD_OPERATIONAL_RADIUS)
+    -- if area.unexplored and #area.unexplored > 0 then
+    --     -- Prioritize unexplored chunks
+    --     table.sort(area.unexplored, function(a, b) return a.distance < b.distance end)     
+    -- end
 
     -- Decide next order
-    if squad_data.status == STATUS.OPERATIONAL then
-        if brigade_order then squad_data.unit_group.set_command(brigade_order) return -- if brigade order - execute it
-        elseif battalion_order then squad_data.unit_group.set_command(battalion_order) return -- if battalion order - execute it
-        elseif platoon_order then squad_data.unit_group.set_command(platoon_order) return -- elseif platoon order - execute it
+    if squad_data.status == STATUS.OPERATIONAL and order then
+        squad_data.unit_group.set_command(order)
+        return -- if command order - execute it
         -- elseif (#area.unexplored > 0) then M.squad_explore(squad_id, area.unexplored[math.random(1, #area.unexplored)].world) return -- elseif explore order - continue exploring
         -- else M.squad_patrol(squad_id) end -- else patrole around HQ
-        else 
-          M.return_to_base(squad_id) 
-        end
-    elseif squad_data.status == STATUS.RETREATING then
-        M.retreat_squad(squad_id)
-    elseif M.needs_reinforcements(squad_id)and M.can_reinforce(squad_id) and M.reinforcements_available(squad_id)  then
+    elseif squad_data.status == STATUS.REINFORCING then
         M.reinforce_squad(squad_id)
+        return
+    else
+      squad_data.unit_group.set_command({
+          type = defines.command.wander,
+          radius = 10,
+          distraction = defines.distraction.by_enemy,
+        })
+        return
     end
+
 end
 
 -- ============================================
@@ -375,7 +381,12 @@ function M.on_ai_command_completed(event)
   if not squad_data then return end
   M.update_integrity(event.unit_number)
   M.update_status(event.unit_number)
-  M.next_order(event.unit_number)
+  if not M.is_squad_within_radius(squad_data, HQ_REINFORCEMENT_RADIUS) then
+      M.return_to_base(event.unit_number)
+  else 
+      M.next_order(event.unit_number)
+  end
+
 end
 
 function M.on_squad_retreat(event)
@@ -402,17 +413,7 @@ function M.try_recover_soldier(event)
     if soldier and soldier.valid and soldier.name == "soldier-unit" then
         event.group.add_member(soldier)
     end
-end
--- ===========================================
--- EVENTS REGISTRATION
--- ===========================================
-
-function M.register_events()
-    script.on_event(defines.events.on_ai_command_completed, M.on_ai_command_completed)
-    -- script.on_event(defines.events.on_unit_group_created, M.on_squad_created)
-    script.on_event(defines.events.on_entity_died, M.on_entity_died)
-    script.on_event(defines.events.on_unit_removed_from_group, M.try_recover_soldier)
-end
+end 
 
 -- ============================================
 -- HELPER FUNCTIONS
@@ -452,16 +453,21 @@ function M.can_reinforce(squad_id)
     if not squad_data then return false end
 
     if squad_data.unit_group and squad_data.unit_group.valid then
-        local dx = squad_data.unit_group.position.x - squad_data.hq_position.x
-        local dy = squad_data.unit_group.position.y - squad_data.hq_position.y
-        local dist_squared = dx * dx + dy * dy
-
-        if dist_squared <= HQ_REINFORCEMENT_RADIUS * HQ_REINFORCEMENT_RADIUS then
-            return true
+          if M.is_squad_within_radius(squad_data, HQ_REINFORCEMENT_RADIUS) then
+              return true
         end
     else
         return false
     end
+end
+
+function M.is_squad_within_radius(squad_data, radius)
+    if not squad_data or not squad_data.unit_group or not squad_data.unit_group.valid then return false end
+  local pos = squad_data.unit_group.position
+  local hq = squad_data.hq_position
+  local dx = pos.x - hq.x
+  local dy = pos.y - hq.y
+  return (dx * dx + dy * dy) <= (radius * radius)
 end
 
 function M.get_reinforcements_available(squad_id)

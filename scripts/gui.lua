@@ -244,12 +244,11 @@ function gui.command_tool(player)
   local cursor_stack = player.cursor_stack
   if cursor_stack and cursor_stack.valid and not cursor_stack.valid_for_read then
     cursor_stack.set_stack{name = "command-order-tool", count = 1}
-  else
-    local inserted = player.insert{name = "command-order-tool", count = 1}
-    if inserted == 0 then
-      player.print("No space for command-order-tool!")
-    end
   end
+end
+
+function gui.create_command_tag()
+  
 end
 -- ============================================
 -- EVENT HANDLERS

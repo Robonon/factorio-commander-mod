@@ -42,6 +42,7 @@ local build_filter = {
   { filter = "name", name = "battalion-hq" },
   { filter = "name", name = "company-hq" },
   { filter = "name", name = "platoon-hq" },
+  { filter = "name", name = "soldier-unit" },
 }
 
 local function on_built(event)
@@ -54,9 +55,26 @@ local function on_destroyed(event)
   battalion.on_destroyed(event)
   company.on_destroyed(event)
   platoon.on_destroyed(event)
+  squad.on_entity_died(event)
 end
 
-squad.register_events()
+local function on_chart_tag_added(event)
+  platoon.on_chart_tag_added(event)
+end
+
+local function on_chart_tag_destroyed(event)
+  platoon.on_chart_tag_destroyed(event)
+end
+
+local function on_ai_command_completed(event)
+  squad.on_ai_command_completed(event)
+end
+
+script.on_event(defines.events.on_chart_tag_added, on_chart_tag_added)
+script.on_event(defines.events.on_chart_tag_removed, on_chart_tag_destroyed)
+script.on_event(defines.events.on_ai_command_completed, on_ai_command_completed)
+-- script.on_event(defines.events.on_entity_died, squad.on_entity_died)
+script.on_event(defines.events.on_unit_removed_from_group, squad.try_recover_soldier)
 
 script.on_event(defines.events.on_built_entity, on_built, build_filter)
 script.on_event(defines.events.on_robot_built_entity, on_built, build_filter)
@@ -70,6 +88,8 @@ script.on_event(defines.events.script_raised_destroy, on_destroyed, build_filter
 
 -- Periodic updates
 script.on_nth_tick(UPDATE_INTERVAL, function()
+  platoon.update_platoons()
+
   squad.update_all()
 
   gui.update_tags()
@@ -95,7 +115,7 @@ script.on_event(defines.events.on_player_selected_area, function(event)
         x = (event.area.left_top.x + event.area.right_bottom.x) / 2,
         y = (event.area.left_top.y + event.area.right_bottom.y) / 2
       }
-      platoon.issue_platoon_command(platoon_id, pos)
+      platoon.issue_platoon_attack(platoon_id, pos)
     end
   end
   local player = game.get_player(event.player_index)

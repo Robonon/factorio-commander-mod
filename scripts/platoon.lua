@@ -34,11 +34,10 @@ end
 -- PLATOON MANAGEMENT
 -- ============================================
 
-function M.issue_platoon_command(platoon_id, position)
+function M.issue_platoon_attack(platoon_id, position)
     local platoon = storage.platoons[platoon_id]
     if not platoon then return false end
     for _, squad_id in pairs(platoon.squad_ids) do
-
         squad.next_order(squad_id,
         {
             type = defines.command.attack_area,
@@ -46,6 +45,35 @@ function M.issue_platoon_command(platoon_id, position)
             radius = 10,
             distraction = defines.distraction.by_enemy,
         })
+    end
+end
+
+function M.issue_platoon_abort(platoon_id)
+    local platoon = storage.platoons[platoon_id]
+    if not platoon then return false end
+    for _, squad_id in pairs(platoon.squad_ids) do
+        squad.return_to_base(squad_id)
+    end
+  
+end
+
+function M.update_platoons()
+    if not storage.platoons then return false end
+    for platoon_id, platoon in pairs(storage.platoons) do
+        if not platoon.entity or not platoon.entity.valid then
+            M.unregister_platoon(platoon_id)
+        elseif #platoon.squad_ids < SQUADS_PER_PLATOON then
+            local hq_inventory = platoon.entity.get_inventory(defines.inventory.chest)
+            if not hq_inventory or not hq_inventory.valid then return end
+            if hq_inventory.get_item_count("soldier-token") < (SQUADS_PER_PLATOON * 8) - (#platoon.squad_ids * 8) then return end
+            platoon.squad_ids = squad.create_squads_for_platoon(
+                platoon.entity.surface,
+                platoon.entity.position,
+                platoon.entity.force,
+                platoon_id,
+                SQUADS_PER_PLATOON - #platoon.squad_ids
+            )
+        end
     end
 end
 
@@ -61,10 +89,39 @@ function M.unregister_platoon(unit_number)
   storage.platoons[unit_number] = nil
 end
 
-  --- ===========================================
-  --- EVENTS
-  --- ===========================================
-  --- 
+--- ===========================================
+--- EVENTS
+--- ===========================================
+
+function M.on_chart_tag_added(event)
+    if not event.tag or not event.tag.valid then return end
+    for platoon_id, platoon in pairs(storage.platoons) do
+        if not platoon.entity or not platoon.entity.valid then
+          return
+        end
+        if event.tag.text == tostring(platoon_id) then
+            M.issue_platoon_attack(platoon_id, event.tag.position)
+        end
+    end
+end
+
+function M.on_chart_tag_destroyed(event)
+  if not event.tag or not event.tag.valid then return end
+    for platoon_id, platoon in pairs(storage.platoons) do
+        if not platoon.entity or not platoon.entity.valid then
+          return
+        end
+        if event.tag.text == tostring(platoon_id) then
+            M.issue_platoon_abort(platoon_id)
+        end
+    end
+end
+
+-- function M.register_events()
+--     script.on_event(defines.events.on_item, M.try_recover_soldier)
+-- end
+
+
 
 
 return M
