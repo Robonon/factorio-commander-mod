@@ -2,11 +2,13 @@ THING NOT WORKING
 
 - Orphaned soldiers, how to handle?
 - tweak pathfinding
-- sqitch nth tick update to use only eventdriven updates if possible
-- more control over orders and operation zones, it's too much random jittering right now
+- handle platoon selection better with the command order tool, to no spawn tool when deselecting platoon, or deselect when tool is used
+- command order on map
+- destroy map tag if squad is destroyed
+- re-create squad if squad is destroyed
+- display squad status on platoon bar
+- destroy platoon on hq removed or destroyed?
 
 FEATURES
-- spawn use soldier tokens
+- spawn squad use soldier tokens
 - better army data overview, which platoons has which squads, what are their strengths, where are they positioned, which is it's HQ
-- higher command order, platoon, batallion, brigade
-    - order regroup_and_assault
