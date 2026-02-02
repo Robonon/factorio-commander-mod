@@ -17,4 +17,20 @@ recipes.soldier_token = {
   results = {{type = "item", name = "soldier-token", amount = 1}}
 }
 
+recipes.platoon_hq = {
+  type = "recipe",
+  name = "platoon-hq",
+  enabled = true,
+  energy_required = 20,
+  ingredients = {
+    {type = "item", name = "steel-plate", amount = 20},
+    {type = "item", name = "stone-brick", amount = 10},
+    {type = "item", name = "electronic-circuit", amount = 5},
+    {type = "item", name = "soldier-token", amount = 32}
+  },
+  results = {{type = "item", name = "platoon-hq", amount = 1}}
+}
+
+
+
 return recipes

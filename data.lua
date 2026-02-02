@@ -27,6 +27,7 @@ data:extend{
 -- Register recipes
 data:extend{
   recipes.soldier_token,
+  recipes.platoon_hq,
 }
 
 -- Register selection tools
