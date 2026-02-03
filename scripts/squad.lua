@@ -376,6 +376,15 @@ end
 -- EVENT HANDLERS
 -- ============================================
 
+function M.on_hq_destroyed(event)
+    local entity = event.entity
+    if not entity then return end
+    
+    for squad_id, squad_data in pairs(storage.squads) do
+        
+    end
+end
+
 function M.on_ai_command_completed(event)
   local squad_data = M.get_valid_squad(event.unit_number)
   if not squad_data then return end

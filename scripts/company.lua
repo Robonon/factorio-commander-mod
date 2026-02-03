@@ -13,7 +13,9 @@ function M.on_built(event)
   if not entity or not entity.valid then return end
   
   if entity.name == "company-hq" then
-    M.register_company(entity)
+    storage.companies[entity.unit_number] = {
+      entity = entity,
+    }
   end
 end
 
@@ -22,22 +24,8 @@ function M.on_destroyed(event)
   if not entity then return end
   
   if entity.name == "company-hq" then
-    M.unregister_company(entity.unit_number)
+    storage.companies[entity.unit_number] = nil
   end
-end
-
--- ============================================
--- COMPANY MANAGEMENT
--- ============================================
-
-function M.register_company(entity)
-  storage.companies[entity.unit_number] = {
-    entity = entity,
-  }
-end
-
-function M.unregister_company(unit_number)
-  storage.companies[unit_number] = nil
 end
 
 return M

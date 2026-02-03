@@ -86,6 +86,14 @@ function M.register_platoon(entity)
 end
 
 function M.unregister_platoon(unit_number)
+  for _, squad_id in pairs(storage.platoons[unit_number].squad_ids) do
+      local squad_data = squad.get_valid_squad(squad_id)
+      if squad_data then
+          for _, entity in pairs(squad_data.unit_group.members) do
+              entity.destroy()
+          end
+      end
+  end
   storage.platoons[unit_number] = nil
 end
 
