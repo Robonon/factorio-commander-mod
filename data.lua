@@ -30,17 +30,17 @@ data:extend{
 }
 
 -- icons
-data:extend({
-  {
-    type = "virtual-signal",
-    name = "nato-platoon-signal",
-    icon = "__commander__/assets/platoon.png",
-    icon_size = 32
-  },
-  {
-    type = "virtual-signal",
-    name = "nato-squad-signal",
-    icon = "__commander__/assets/squad.png",
-    icon_size = 32
-  },
-})
+-- data:extend({
+--   {
+--     type = "virtual-signal",
+--     name = "nato-platoon-signal",
+--     icon = "__commander__/assets/platoon.png",
+--     icon_size = 32
+--   },
+--   {
+--     type = "virtual-signal",
+--     name = "nato-squad-signal",
+--     icon = "__commander__/assets/squad.png",
+--     icon_size = 32
+--   },
+-- })
