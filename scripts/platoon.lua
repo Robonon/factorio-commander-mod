@@ -90,7 +90,7 @@ function M.unregister_platoon(unit_number)
       local squad_data = squad.get_valid_squad(squad_id)
       if squad_data then
           for _, entity in pairs(squad_data.unit_group.members) do
-              entity.destroy()
+              entity.destroy{raise_destroy=true}
           end
       end
   end

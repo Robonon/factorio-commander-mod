@@ -51,6 +51,7 @@ local function on_destroyed(event)
   company.on_destroyed(event)
   platoon.on_destroyed(event)
   squad.on_entity_died(event)
+  gui.on_destroyed(event)
 end
 
 local function on_chart_tag_added(event)

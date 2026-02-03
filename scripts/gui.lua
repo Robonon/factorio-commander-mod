@@ -233,18 +233,30 @@ function gui.add_platoon_row(parent, id, data, pc, indent, pi)
   row.add{type = "label", caption = bar}
   return #squad_ids, total_soldiers
 end
+
 function gui.add_squad_row(parent, id, data, indent)
   local count = (data.unit_group and data.unit_group.valid) and #data.unit_group.members or 0
   return count
 end
 
-function gui.create_command_tag()
-  
-end
 -- ============================================
 -- EVENT HANDLERS
 -- ============================================
 
+function gui.on_destroyed(event)
+  local tag = storage.tags[event.entity.unit_number]
+  if tag then tag.destroy() end
+  storage.tags[event.entity.unit_number] = nil
+  if event.entity and event.entity.name == "platoon-hq" then
+    for squad_id, squad_data in pairs(storage.squads or {}) do
+      if squad_data and squad_data.platoon_id == event.entity.unit_number then
+        local tag = storage.tags[squad_id]
+        if tag then tag.destroy() end
+        storage.tags[squad_id] = nil
+      end
+    end
+  end
+end
 
 function gui.on_click(event)
   local el = event.element; if not el or not el.valid then return end
