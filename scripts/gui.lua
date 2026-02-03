@@ -238,15 +238,6 @@ function gui.add_squad_row(parent, id, data, indent)
   return count
 end
 
-function gui.command_tool(player)
-  if not player then return end
-  game.print(serpent.block(player.cursor_stack))
-  local cursor_stack = player.cursor_stack
-  if cursor_stack and cursor_stack.valid and not cursor_stack.valid_for_read then
-    cursor_stack.set_stack{name = "command-order-tool", count = 1}
-  end
-end
-
 function gui.create_command_tag()
   
 end
@@ -264,7 +255,7 @@ function gui.on_click(event)
   if name == "close_commander_button" then if player.gui.left.commander_frame then player.gui.left.commander_frame.destroy() end; state.selected_platoon[pi] = nil; clear_highlights(pi); return end
   if name == "expand_all_button" then state.collapsed[pi] = {}; gui.update_commander_panel(player); return end
   if name == "collapse_all_button" then local pc = state.collapsed[pi] or {}; for tbl_name, tbl in pairs({brigades = storage.brigades, battalions = storage.battalions, companies = storage.companies, platoons = storage.platoons}) do if tbl then for id in pairs(tbl) do pc[tbl_name:sub(1, -2) .. "_" .. id] = true end end end; state.collapsed[pi] = pc; gui.update_commander_panel(player); return end
-  if name:sub(1, 15) == "select_platoon_" then select_platoon(player, tonumber(name:sub(16)), false); gui.update_commander_panel(player); gui.command_tool(player) return end
+  if name:sub(1, 15) == "select_platoon_" then select_platoon(player, tonumber(name:sub(16)), false); gui.update_commander_panel(player); return end
   if name:sub(1, 7) == "toggle_" then local key = name:sub(8); state.collapsed[pi] = state.collapsed[pi] or {}; state.collapsed[pi][key] = not state.collapsed[pi][key]; gui.update_commander_panel(player); return end
 end
 

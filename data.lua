@@ -3,7 +3,6 @@
 local entities = require("prototypes.entities")
 local items = require("prototypes.items")
 local recipes = require("prototypes.recipes")
-local tools = require("prototypes.tools")
 local platoon = require("scripts.platoon")
 local squad = require("scripts.squad")
 
@@ -29,11 +28,6 @@ data:extend{
   recipes.soldier_token,
   recipes.platoon_hq,
 }
-
--- Register selection tools
-for _, tool in ipairs(tools.selection_tools) do
-  data:extend{tool}
-end
 
 -- icons
 data:extend({
