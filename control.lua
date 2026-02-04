@@ -1,8 +1,6 @@
 -- control.lua
 
-local battalion = require("scripts.battalion")
-local company = require("scripts.company")
-local platoon = require("scripts.platoon")
+local command_structure = require("scripts.command_structure")
 local squad = require("scripts.squad")
 local gui = require("scripts.gui")
 
@@ -11,17 +9,12 @@ local gui = require("scripts.gui")
 -- ============================================
 
 script.on_init(function()
-  battalion.init_storage()
-  company.init_storage()
-  platoon.init_storage()
+  command_structure.init_storage()
   squad.init_storage()
-
 end)
 
 script.on_configuration_changed(function()
-  battalion.init_storage()
-  company.init_storage()
-  platoon.init_storage()
+  command_structure.init_storage()
   squad.init_storage()
 end)
 
@@ -40,26 +33,24 @@ local build_filter = {
   { filter = "name", name = "soldier-unit" },
 }
 
+
+
 local function on_built(event)
-  battalion.on_built(event)
-  company.on_built(event)
-  platoon.on_built(event)
+  command_structure.on_built(event)
 end
 
 local function on_destroyed(event)
-  battalion.on_destroyed(event)
-  company.on_destroyed(event)
-  platoon.on_destroyed(event)
+  command_structure.on_destroyed(event)
   squad.on_entity_died(event)
   gui.on_destroyed(event)
 end
 
 local function on_chart_tag_added(event)
-  platoon.on_chart_tag_added(event)
+  command_structure.on_chart_tag_added(event)
 end
 
 local function on_chart_tag_destroyed(event)
-  platoon.on_chart_tag_destroyed(event)
+  command_structure.on_chart_tag_destroyed(event)
 end
 
 local function on_ai_command_completed(event)
@@ -84,13 +75,13 @@ script.on_event(defines.events.script_raised_destroy, on_destroyed, build_filter
 
 -- Periodic updates
 script.on_nth_tick(UPDATE_INTERVAL, function()
-  platoon.update_platoons()
+  command_structure.update_platoons()
 
   squad.update_all()
 
   gui.update_tags()
   for index, player in ipairs(game.connected_players) do
-    gui.update_commander_panel(player)
+    gui.update_commander_panel(player, storage.platoon_limit, storage.force_limit)
   end
 end)
 

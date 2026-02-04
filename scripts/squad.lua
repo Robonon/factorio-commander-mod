@@ -116,7 +116,6 @@ function M.reinforce_squad(squad_id)
   
   for i = #squad_data.unit_group.members, SOLDIERS_PER_SQUAD - 1 do
     if hq_inventory.get_item_count("soldier-token") <= 0 then
-        game.print("No more soldier-tokens available for reinforcement!")
         return
     end
     hq_inventory.remove({name = "soldier-token", count = 1})
@@ -191,7 +190,6 @@ function M.cleanup(squad_id)
                 integrity = squad_data.integrity,
             }
             storage.squads[squad_id] = nil  -- Remove old entry
-            game.print("[Squad " .. squad_id .. " -> " .. new_squad_id .. "] Recovered with " .. #surviving_soldiers .. " soldiers")
             return
         end
     end
@@ -396,7 +394,6 @@ function M.on_squad_retreat(event)
 end
 
 function M.on_entity_died(event)
-    game.print("Entity died: " .. tostring(event.entity.name))
     local squad_data = M.get_valid_squad(event.unit_number)
     if not squad_data then return end
     

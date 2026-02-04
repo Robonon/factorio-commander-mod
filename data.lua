@@ -3,30 +3,32 @@
 local entities = require("prototypes.entities")
 local items = require("prototypes.items")
 local recipes = require("prototypes.recipes")
-local platoon = require("scripts.platoon")
-local squad = require("scripts.squad")
 
 -- Register entities: units and buildings
 data:extend{
-  entities.soldier,
-  entities.hq_squad,
   entities.brigade_hq,
   entities.battalion_hq,
+  entities.company_hq,
   entities.platoon_hq,
+  entities.soldier,
 }
 
 -- Register items
 data:extend{
-  items.soldier_token,
   items.brigade_hq,
   items.battalion_hq,
+  items.company_hq,
   items.platoon_hq,
+  items.soldier_token,
 }
 
 -- Register recipes
 data:extend{
-  recipes.soldier_token,
+  recipes.brigade_hq,
+  recipes.battalion_hq,
+  recipes.company_hq,
   recipes.platoon_hq,
+  recipes.soldier_token,
 }
 
 -- icons

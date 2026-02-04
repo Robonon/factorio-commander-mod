@@ -17,6 +17,48 @@ recipes.soldier_token = {
   results = {{type = "item", name = "soldier-token", amount = 1}}
 }
 
+recipes.brigade_hq = {
+  type = "recipe",
+  name = "brigade-hq",
+  enabled = true,
+  energy_required = 20,
+  ingredients = {
+    {type = "item", name = "steel-plate", amount = 20},
+    {type = "item", name = "stone-brick", amount = 10},
+    {type = "item", name = "electronic-circuit", amount = 5},
+    {type = "item", name = "soldier-token", amount = 12}
+  },
+  results = {{type = "item", name = "brigade-hq", amount = 1}}
+}
+
+recipes.battalion_hq = {
+  type = "recipe",
+  name = "battalion-hq",
+  enabled = true,
+  energy_required = 20,
+  ingredients = {
+    {type = "item", name = "steel-plate", amount = 20},
+    {type = "item", name = "stone-brick", amount = 10},
+    {type = "item", name = "electronic-circuit", amount = 5},
+    {type = "item", name = "soldier-token", amount = 12}
+  },
+  results = {{type = "item", name = "battalion-hq", amount = 1}}
+}
+
+recipes.company_hq = {
+  type = "recipe",
+  name = "company-hq",
+  enabled = true,
+  energy_required = 20,
+  ingredients = {
+    {type = "item", name = "steel-plate", amount = 20},
+    {type = "item", name = "stone-brick", amount = 10},
+    {type = "item", name = "electronic-circuit", amount = 5},
+    {type = "item", name = "soldier-token", amount = 12}
+  },
+  results = {{type = "item", name = "company-hq", amount = 1}}
+}
+
 recipes.platoon_hq = {
   type = "recipe",
   name = "platoon-hq",

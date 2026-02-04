@@ -9,36 +9,6 @@ local function get_toggle_icon(c) return c and "▶" or "▼" end
 local function get_health_bar(cur, max)
   local bar = ""; for i = 1, max do bar = bar .. (i <= cur and "[color=green]█[/color]" or "[color=gray]░[/color]") end; return bar
 end
-local function get_status_display(status)
-  local d = {operational = "[color=green]● operational[/color]", retreating = "[color=red]● retreating[/color]", reinforcing = "[color=yellow]● reinforcing[/color]"}
-  return d[status] or ("[color=gray]● " .. (status or "unknown") .. "[/color]")
-end
-
--- ============================================
--- MAP MARKERS
--- ============================================
-
-
-local function create_unit_tags(platoon_id)
-  local platoon = storage.platoons and storage.platoons[platoon_id]
-  if not platoon then return end
-  local marker_name = "P" .. platoon_id .. "S" .. (platoon.squad_ids and #platoon.squad_ids or 0)
-  
-  for _, sid in pairs(platoon.squad_ids or {}) do
-    local squad_data = storage.squads and storage.squads[sid]
-    if squad_data and squad_data.unit_group and squad_data.unit_group.valid then
-      local tag = {
-        text = marker_name,
-        icon = {type = "item", name = "soldier-token"},
-        position = squad_data.unit_group.position,
-        last_user = nil,
-      }
-      local existing_tag = storage.tags[sid]
-      if existing_tag then existing_tag.destroy() end
-      storage.tags[sid] = squad_data.unit_group.force.add_chart_tag(squad_data.unit_group.surface, tag)
-    end
-  end
-end
 
 -- ============================================
 -- SELECTION HIGHLIGHTING
@@ -94,12 +64,18 @@ function gui.create_buttons(player)
   flow.add{type = "sprite-button", name = "toggle_commander_panel", caption = "⚔", tooltip = "Commander Panel", style = "slot_button"}
 end
 
-
 function gui.create_commander_panel(player)
   if player.gui.left.commander_frame then player.gui.left.commander_frame.destroy(); return end
   state.collapsed[player.index] = state.collapsed[player.index] or {}
   local frame = player.gui.left.add{type = "frame", name = "commander_frame", caption = "⚔ Military Command", direction = "vertical"}
   frame.style.minimal_width = 350
+
+  local platoon_limit_label = frame.add{type = "label", name = "platoon_limit_label", caption = string.format("Platoon Limit: %d platoon(s)", storage.platoon_limit or 0)}
+  platoon_limit_label.style.font = "default-bold"
+
+  local force_limit_label = frame.add{type = "label", name = "force_limit_label", caption = string.format("Force Limit: %d soldiers", storage.force_limit or 0)}
+  force_limit_label.style.font = "default-bold"
+
   local header = frame.add{type = "flow", name = "header_flow", direction = "horizontal"}
   header.add{type = "button", name = "refresh_commander_button", caption = "↻ Refresh", style = "mini_button"}
   header.add{type = "button", name = "expand_all_button", caption = "Expand All", style = "mini_button"}
@@ -118,10 +94,17 @@ end
 -- ============================================
 
 
-function gui.update_commander_panel(player)
+function gui.update_commander_panel(player, platoon_limit, force_limit)
   local frame = player.gui.left.commander_frame; if not frame then return end
   local content = frame.content_scroll and frame.content_scroll.content_flow; if not content then return end
   content.clear()
+  -- Update force and platoon limit labels
+  if frame.force_limit_label then
+    frame.force_limit_label.caption = string.format("Force Limit: %d soldiers", force_limit or 0)
+  end
+  if frame.platoon_limit_label then
+    frame.platoon_limit_label.caption = string.format("Platoon Limit: %d platoon(s)", platoon_limit or 0)
+  end
   local pc = state.collapsed[player.index] or {}
   local total_platoons, total_squads, total_soldiers = 0, 0, 0
   local has = {

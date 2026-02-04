@@ -37,6 +37,17 @@ items.battalion_hq = {
   stack_size = 10
 }
 
+items.company_hq = {
+  type = "item",
+  name = "company-hq",
+  icon = "__base__/graphics/icons/radar.png",
+  icon_size = 64,
+  subgroup = "military-equipment",
+  order = "c[company-hq]",
+  place_result = "company-hq",
+  stack_size = 20
+}
+
 items.platoon_hq = {
   type = "item",
   name = "platoon-hq",
