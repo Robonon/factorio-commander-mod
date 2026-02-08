@@ -14,8 +14,7 @@ end
 local function draw_hierarchy_lines(player, parent_entity, child_entity)
     local color = {r=0, g=0, b=1, a=0.2}
     local width = 2
-
-  rendering.draw_line{
+  local line = rendering.draw_line{
     color = color,
     width = width,
     from = parent_entity,
@@ -26,16 +25,17 @@ local function draw_hierarchy_lines(player, parent_entity, child_entity)
     only_in_alt_mode = true,
     draw_on_ground = true
   }
-
-  rendering.draw_line{
+  local chart_line = rendering.draw_line{
     color = color,
     width = width,
     from = parent_entity,
     to = child_entity,
     surface = parent_entity.surface,
     players = {player.index},
-    render_mode = "chart"
+    render_mode = "chart",
+    only_in_alt_mode = true,
   }
+
 end
 
 -- ============================================
@@ -50,6 +50,9 @@ end
 
 function gui.create_commander_panel(player)
   if player.gui.left.commander_frame then player.gui.left.commander_frame.destroy(); return end
+
+  rendering.clear("commander")
+
   state.collapsed[player.index] = state.collapsed[player.index] or {}
   local frame = player.gui.left.add{type = "frame", name = "commander_frame", caption = "⚔ Military Command", direction = "vertical"}
   frame.style.minimal_width = 350
@@ -151,7 +154,7 @@ function gui.update_tags()
 
     tag = {
       text = hq_tag_text,
-      icon = {type = "item", name = "radar"},-- TODO: custom icons for different HQ types
+      icon = {type = "virtual", name = "signal-dot"},-- TODO: custom icons for different HQ types
       position = hq.entity.position,
       last_user = nil,
     }
@@ -208,7 +211,7 @@ function add_hq_row(parent, hq, pc, indent, player)
       add_hq_row(hq_row, storage.HQ[child_id], pc, indent + 1, player)
     end
   end
-  if hq.maneuver_squad_ids and not hq.maneuver_squad_ids == {} then
+  if hq.maneuver_squad_ids and #hq.maneuver_squad_ids > 0 then
     for _, squad_id in pairs(hq.maneuver_squad_ids) do
       add_squad_row(hq_row, squad_id, indent + 2)
     end
@@ -248,8 +251,16 @@ function gui.on_click(event)
   local el = event.element; if not el or not el.valid then return end
   local player = game.get_player(event.player_index); if not player then return end
   local name, pi = el.name, player.index
-  if name == "toggle_commander_panel" then gui.create_commander_panel(player); return end
-  if name:sub(1, 7) == "toggle_" then local key = name:sub(8); state.collapsed[pi] = state.collapsed[pi] or {}; state.collapsed[pi][key] = not state.collapsed[pi][key]; gui.update_commander_panel(player); return end
+  if name == "toggle_commander_panel" then 
+    gui.create_commander_panel(player); 
+    return 
+  end
+  if name:sub(1, 7) == "toggle_" then 
+    local key = name:sub(8); 
+    state.collapsed[pi] = state.collapsed[pi] or {}; state.collapsed[pi][key] = not state.collapsed[pi][key]; 
+    gui.update_commander_panel(player); 
+    return
+  end
 end
 
 function gui.on_ai_command_completed(event)
