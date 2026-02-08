@@ -68,7 +68,6 @@ end
 script.on_event(defines.events.on_chart_tag_added, on_chart_tag_added)
 script.on_event(defines.events.on_chart_tag_removed, on_chart_tag_destroyed)
 script.on_event(defines.events.on_ai_command_completed, on_ai_command_completed)
--- script.on_event(defines.events.on_entity_died, squad.on_entity_died)
 script.on_event(defines.events.on_unit_removed_from_group, squad.try_recover_soldier)
 
 script.on_event(defines.events.on_built_entity, on_built, build_filter)

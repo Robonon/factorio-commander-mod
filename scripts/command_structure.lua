@@ -101,7 +101,17 @@ function M.update_squads()
             if not hq.maneuver_squad_ids then
                 hq.maneuver_squad_ids = hq.maneuver_squad_ids or {}
             end
-
+            for i = #hq.maneuver_squad_ids, 1, -1 do 
+                if not hq.maneuver_squad_ids[i] then
+                    table.remove(hq.maneuver_squad_ids, i)
+                end
+            end
+            for index, squad_id in pairs(hq.maneuver_squad_ids) do
+                local squad_data = squad_module.get_valid_squad(squad_id)
+                if not squad_data or not squad_data.unit_group or not squad_data.unit_group.valid or squad_data.unit_group.members == 0 then
+                    table.remove(hq.maneuver_squad_ids, index)
+                end
+            end
             if #hq.maneuver_squad_ids < M.SQUADS_PER_PLATOON then
                 local hq_inventory = hq.entity.get_inventory(defines.inventory.chest)
                 if not hq_inventory or not hq_inventory.valid then goto continue end
