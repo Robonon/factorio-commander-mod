@@ -37,12 +37,20 @@ local build_filter = {
 
 local function on_built(event)
   command_structure.on_built(event)
+  
+  for index, player in ipairs(game.connected_players) do
+    gui.update_commander_panel(player)
+  end
 end
 
 local function on_destroyed(event)
   command_structure.on_destroyed(event)
   squad.on_entity_died(event)
+  
   gui.on_destroyed(event)
+  for index, player in ipairs(game.connected_players) do
+    gui.update_commander_panel(player)
+  end
 end
 
 local function on_chart_tag_added(event)
@@ -75,14 +83,11 @@ script.on_event(defines.events.script_raised_destroy, on_destroyed, build_filter
 
 -- Periodic updates
 script.on_nth_tick(UPDATE_INTERVAL, function()
-  command_structure.update_platoons()
+  command_structure.update_squads()
 
   squad.update_all()
 
   gui.update_tags()
-  for index, player in ipairs(game.connected_players) do
-    gui.update_commander_panel(player, storage.platoon_limit, storage.force_limit)
-  end
 end)
 
 -- GUI events
