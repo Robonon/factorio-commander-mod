@@ -12,9 +12,24 @@ local function get_health_bar(cur, max)
 end
 
 local function draw_hierarchy_lines(player, parent_entity, child_entity)
+    local color = {r=0, g=0, b=1, a=0.2}
+    local width = 2
+
   rendering.draw_line{
-    color = {r=1, g=1, b=0},
-    width = 2,
+    color = color,
+    width = width,
+    from = parent_entity,
+    to = child_entity,
+    surface = parent_entity.surface,
+    players = {player.index},
+    render_mode = "game",
+    only_in_alt_mode = true,
+    draw_on_ground = true
+  }
+
+  rendering.draw_line{
+    color = color,
+    width = width,
     from = parent_entity,
     to = child_entity,
     surface = parent_entity.surface,
