@@ -33,9 +33,8 @@ HQ_TYPES = {
     COMPANY = "company-hq",
     PLATOON = "platoon-hq"
 }
-COMPANY_IDS = {
-    "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"
-}
+COMPANY_IDS = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}
+UNIT_IDS = {1, 2, 3, 4, 5, 6, 7, 8, 9}
 
 function M.init_storage()
     storage.HQ = storage.HQ or {}
@@ -45,6 +44,7 @@ function M.init_storage()
         [HQ_TYPES.COMPANY] = 0,
         [HQ_TYPES.PLATOON] = 0,
     }
+    storage.selected = storage.selected or {}
 end
 
 -- UNIT COMMANDS
@@ -62,7 +62,6 @@ function M.issue_unit_attack(hq_id, position)
 
     if not hq.maneuver_squad_ids then return false end
     for _, squad_id in pairs(hq.maneuver_squad_ids) do
-        game.print("Issuing attack order to squad " .. squad_id)
         squad_module.next_order(squad_id, {
             type = defines.command.attack_area,
             destination = position,
@@ -151,9 +150,6 @@ function M.on_built(event)
 
     local hq = HQ:new(entity)
 
-    storage.HQ[entity.unit_number] = hq
-    storage.HQ_counts[entity.name] = storage.HQ_counts[entity.name] + 1
-
     if hq.parent_hq_id then
         local parent_hq = storage.HQ[hq.parent_hq_id]
         if parent_hq then
@@ -161,6 +157,10 @@ function M.on_built(event)
             storage.HQ[hq.parent_hq_id] = parent_hq
         end
     end
+    
+    storage.HQ[entity.unit_number] = hq
+    storage.HQ_counts[entity.name] = storage.HQ_counts[entity.name] + 1
+    update_tag_ids()
 end
 
 function M.on_destroyed(event)
@@ -207,6 +207,7 @@ function M.on_destroyed(event)
     storage.HQ[entity.unit_number] = nil
     storage.HQ_counts[entity.name] = storage.HQ_counts[entity.name] - 1 or 0
 
+    update_tag_ids()
 end
 
 function M.on_chart_tag_added(event)
@@ -232,6 +233,40 @@ function M.on_chart_tag_destroyed(event)
     end
 end
 
+function M.select_unit(event)
+  if not event.player_index or not event.cursor_position then return end
+  local player = game.get_player(event.player_index)
+  if not player or not player.valid then return end
+  local hqs = player.surface.find_entities_filtered{
+    position = event.cursor_position,
+    radius = 5,
+    limit = 1,
+    name = {"platoon-hq", "company-hq", "battalion-hq", "brigade-hq"},
+  }
+    if hqs and #hqs > 0 then
+        local hq = storage.HQ[hqs[1].unit_number]
+        if not storage.selected[player.index] or not storage.selected[player.index].valid then
+            storage.selected[player.index] = storage.selected[player.index] or {}
+        end
+        if hq and hq.entity and hq.entity.valid and hq.tag_id then
+            storage.selected[player.index] = hq
+            player.print("Selected: " .. hq.tag_id)
+        end
+    end
+end
+
+function M.command_unit(event)
+    if not event.cursor_position then return end
+    if not event.player_index then return end
+    local player = game.get_player(event.player_index)
+    if not player or not player.valid then return end
+    local hq = storage.selected[event.player_index]
+    game.print(serpent.block(hq))
+    if not hq or not hq.entity or not hq.entity.valid then return end
+    M.issue_unit_attack(hq.entity.unit_number, event.cursor_position)
+    player.print("Issuing command " .. hq.entity.name .. " [" .. hq.tag_id .. "] to attack position (" .. event.cursor_position.x .. ", " .. event.cursor_position.y .. ")")
+    storage.selected[event.player_index] = nil
+end
 -- Utility functions
 
 function M.hq_limit()
@@ -335,11 +370,28 @@ function find_nearest_children(entity)
 end
 
 function create_tag_id(entity)
+    local id = storage.HQ_counts[entity.unit_number] or 1
+    return tostring(id .. " " .. entity.name)
+end
 
-    local tag_id = storage.HQ_counts[entity.name]
-    if not tag_id or tag_id == 0 then tag_id = 1 end
-
-    return tostring(tag_id .. "_" .. entity.name .. "_" .. entity.unit_number)
+function update_tag_ids()
+    if not storage.HQ then 
+        return false
+    end
+    for i, hq in pairs(storage.HQ) do
+        if not hq or not hq.entity or not hq.entity.valid or not hq.children_hq_ids then
+            goto continue
+        end
+        for j, id in ipairs(hq.children_hq_ids) do
+            local child_hq = storage.HQ[id]
+            if not child_hq or not child_hq.entity or not child_hq.entity.valid then
+                goto continue
+            end
+            child_hq.tag_id = (child_hq.entity.name == HQ_TYPES.COMPANY) and COMPANY_IDS[j] or UNIT_IDS[j]
+            storage.HQ[id] = child_hq
+        end
+        ::continue::
+    end
 end
 
 return M

@@ -146,10 +146,10 @@ function gui.update_tags()
 
 
     local hq_tag_text = ""
-      if hq.entity.name == HQ_TYPES.BRIGADE then hq_tag_text = string.format("[color=blue]X %s[/color] [%d Battalions]", hq.entity.unit_number, hq.children_hq_ids and #hq.children_hq_ids or 0)
-      elseif hq.entity.name == HQ_TYPES.BATTALION then hq_tag_text = string.format("[color=blue]II %s[/color] [%d Companies]", hq.entity.unit_number, hq.children_hq_ids and #hq.children_hq_ids or 0)
-      elseif hq.entity.name == HQ_TYPES.COMPANY then hq_tag_text = string.format("[color=blue]I %s[/color] [%d Platoons]", hq.entity.unit_number, hq.children_hq_ids and #hq.children_hq_ids or 0)
-      elseif hq.entity.name == HQ_TYPES.PLATOON then hq_tag_text = string.format("[color=blue]••• %s[/color] [%d Squads]", hq.entity.unit_number, hq.maneuver_squad_ids and #hq.maneuver_squad_ids or 0)
+      if hq.entity.name == HQ_TYPES.BRIGADE then hq_tag_text = string.format("[color=blue]X %s[/color] [%d Battalions]", hq.tag_id, hq.children_hq_ids and #hq.children_hq_ids or 0)
+      elseif hq.entity.name == HQ_TYPES.BATTALION then hq_tag_text = string.format("[color=blue]II %s[/color] [%d Companies]", hq.tag_id, hq.children_hq_ids and #hq.children_hq_ids or 0)
+      elseif hq.entity.name == HQ_TYPES.COMPANY then hq_tag_text = string.format("[color=blue]I %s[/color] [%d Platoons]", hq.tag_id, hq.children_hq_ids and #hq.children_hq_ids or 0)
+      elseif hq.entity.name == HQ_TYPES.PLATOON then hq_tag_text = string.format("[color=blue]••• %s[/color] [%d Squads]", hq.tag_id, hq.maneuver_squad_ids and #hq.maneuver_squad_ids or 0)
       end
 
     tag = {
@@ -198,10 +198,10 @@ function add_hq_row(parent, hq, pc, indent, player)
   local key = hq.tag_id
 
   local label = ""
-  if hq.entity.name == HQ_TYPES.BRIGADE then label = string.format("[color=blue]X %s[/color] [%d Battalions]", hq.entity.unit_number, hq.children_hq_ids and #hq.children_hq_ids or 0)
-  elseif hq.entity.name == HQ_TYPES.BATTALION then label = string.format("[color=blue]II %s[/color] [%d Companies]", hq.entity.unit_number, hq.children_hq_ids and #hq.children_hq_ids or 0)
-  elseif hq.entity.name == HQ_TYPES.COMPANY then label = string.format("[color=blue]I %s[/color] [%d Platoons]", hq.entity.unit_number, hq.children_hq_ids and #hq.children_hq_ids or 0)
-  elseif hq.entity.name == HQ_TYPES.PLATOON then label = string.format("[color=white]••• %s[/color] [%d Squads]", hq.entity.unit_number, hq.maneuver_squad_ids and #hq.maneuver_squad_ids or 0)
+  if hq.entity.name == HQ_TYPES.BRIGADE then label = string.format("[color=blue]X %s[/color] [%d Battalions]", hq.tag_id, hq.children_hq_ids and #hq.children_hq_ids or 0)
+  elseif hq.entity.name == HQ_TYPES.BATTALION then label = string.format("[color=blue]II %s[/color] [%d Companies]", hq.tag_id, hq.children_hq_ids and #hq.children_hq_ids or 0)
+  elseif hq.entity.name == HQ_TYPES.COMPANY then label = string.format("[color=blue]I %s[/color] [%d Platoons]", hq.tag_id, hq.children_hq_ids and #hq.children_hq_ids or 0)
+  elseif hq.entity.name == HQ_TYPES.PLATOON then label = string.format("[color=white]••• %s[/color] [%d Squads]", hq.tag_id, hq.maneuver_squad_ids and #hq.maneuver_squad_ids or 0)
   end
   
   local hq_row = add_row(parent, label, indent + 1)
@@ -264,7 +264,6 @@ function gui.on_click(event)
 end
 
 function gui.on_ai_command_completed(event)
-
   if not event or not event.unit_number then return end
   local tag = storage.tags[event.unit_number]
   if tag then
