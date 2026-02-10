@@ -80,6 +80,9 @@ script.on_event(defines.events.on_player_mined_entity, on_destroyed, build_filte
 script.on_event(defines.events.on_robot_mined_entity, on_destroyed, build_filter)
 script.on_event(defines.events.script_raised_destroy, on_destroyed, build_filter)
 
+-- Custom input events
+script.on_event("select-unit", command_structure.select_unit)
+script.on_event("command-unit", command_structure.command_unit)
 -- Periodic updates
 script.on_nth_tick(UPDATE_INTERVAL, function()
   command_structure.update_squads()

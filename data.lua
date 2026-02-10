@@ -3,6 +3,7 @@
 local entities = require("prototypes.entities")
 local items = require("prototypes.items")
 local recipes = require("prototypes.recipes")
+local inputs = require("prototypes.inputs")
 
 -- Register entities: units and buildings
 data:extend{
@@ -29,6 +30,12 @@ data:extend{
   recipes.company_hq,
   recipes.platoon_hq,
   recipes.soldier_token,
+}
+
+-- Register custom input
+data:extend{
+  inputs.select_unit,
+  inputs.command_unit,
 }
 
 -- icons
