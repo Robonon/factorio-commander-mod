@@ -5,7 +5,7 @@ M.select_unit = {
     type = "custom-input",
     key_sequence = "SHIFT + mouse-button-1",
     action = "lua",
-    consuming = "game-only",
+    consuming = "none",
     include_selected_prototype = true
 }
 
@@ -14,9 +14,8 @@ M.command_unit = {
     type = "custom-input",
     key_sequence = "SHIFT + mouse-button-2",
     action = "lua",
-    consuming = "game-only",
+    consuming = "none",
     include_selected_prototype = true
 }
-
 
 return M
