@@ -38,7 +38,7 @@ entities.soldier = {
     sound = {
       { filename = "__base__/sound/fight/light-gunshot-1.ogg", volume = 0.4 },
       { filename = "__base__/sound/fight/light-gunshot-2.ogg", volume = 0.4 },
-      { filename = "__base__/sound/fight/light-gunshot-3.ogg", volume = 0.4 }
+      { filename = "__base__/sound/fight/light-gunshot-3.ogg", volume = 0.4 },
     },
     ammo_type = {
       category = "bullet",

@@ -267,6 +267,7 @@ function M.update_integrity(squad_id)
         squad_data.integrity = INTEGRITY.FULL_STRENGTH
     end
 end
+
 function M.next_order(squad_id, order)
     local squad_data = M.get_valid_squad(squad_id)
     if not squad_data then return end
@@ -394,14 +395,17 @@ function M.on_squad_retreat(event)
 end
 
 function M.on_entity_died(event)
-    local squad_data = M.get_valid_squad(event.unit_number)
-    if not squad_data then return end
-    
-    M.update_integrity(event.unit_number)
-    M.update_status(event.unit_number)
+    if not event.entity or not event.entity.valid then return end
+    local unit = event.entity.commandable
+    if not unit or not unit.valid or not unit.parent_group then return end
+    local unit_group = unit.parent_group
+    if not unit_group or not unit_group.valid then return end
 
-    if M.is_squad_retreatable(event.unit_number) and squad_data.status ~= STATUS.RETREATING then
-        M.retreat_squad(event.unit_number)
+    M.update_integrity(unit_group.unique_id)
+    M.update_status(unit_group.unique_id)
+    if M.is_squad_retreatable(unit_group.unique_id)then
+        game.print("[Squad " .. unit_group.unique_id .. "] is retreating due to losses!")
+        M.retreat_squad(unit_group.unique_id)
     end
 end
 
@@ -410,7 +414,7 @@ function M.try_recover_soldier(event)
     if soldier and soldier.valid and soldier.name == "soldier-unit" then
         event.group.add_member(soldier)
     end
-end 
+end
 
 -- ============================================
 -- HELPER FUNCTIONS
