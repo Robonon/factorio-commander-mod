@@ -1,7 +1,7 @@
 local M = {}
 local SOLDIERS_PER_SQUAD = 8
-local OPERATIONAL_THRESHOLD = 3  -- Minimum soldiers to remain operational
-local RETREAT_THRESHOLD = 2      -- Retreat when at or below this
+local OPERATIONAL_THRESHOLD = 6  -- Minimum soldiers to remain operational
+local RETREAT_THRESHOLD = 3      -- Retreat when at or below this
 local SQUAD_OPERATIONAL_RADIUS = 300
 local HQ_REINFORCEMENT_RADIUS = 30
 local STATUS = {
@@ -246,10 +246,6 @@ function M.update_status(squad_id)
 
     if M.is_squad_operational(squad_id) and squad_data.status ~= STATUS.OPERATIONAL then
         squad_data.status = STATUS.OPERATIONAL
-    end
-
-    if M.is_squad_retreatable(squad_id) and squad_data.status ~= STATUS.RETREATING then
-        squad_data.status = STATUS.RETREATING
     end
 
     if M.needs_reinforcements(squad_id) and M.can_reinforce(squad_id) and M.reinforcements_available(squad_id) and squad_data.status ~= STATUS.REINFORCING then
@@ -560,7 +556,6 @@ function M.get_valid_squad(squad_id)
     local squad_data = storage.squads[squad_id]
     if not squad_data then return end
     if not squad_data.unit_group or not squad_data.unit_group.valid then 
-        game.print("Invalid squad ID: " .. tostring(squad_id)) 
         M.cleanup(squad_id)
         return nil 
     end
