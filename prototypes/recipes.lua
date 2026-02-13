@@ -17,6 +17,32 @@ recipes.soldier_token = {
   results = {{type = "item", name = "soldier-token", amount = 1}}
 }
 
+recipes.soldier_token_smg = {
+  type = "recipe",
+  name = "soldier-token-smg",
+  enabled = true,
+  energy_required = 5,
+  ingredients = {
+    {type = "item", name = "submachine-gun", amount = 1},
+    {type = "item", name = "firearm-magazine", amount = 10},
+    {type = "item", name = "heavy-armor", amount = 1}
+  },
+  results = {{type = "item", name = "soldier-token-smg", amount = 1}}
+}
+
+recipes.soldier_token_hmg = {
+  type = "recipe",
+  name = "soldier-token-hmg",
+  enabled = true,
+  energy_required = 5,
+  ingredients = {
+    {type = "item", name = "submachine-gun", amount = 1},
+    {type = "item", name = "piercing-rounds-magazine", amount = 10},
+    {type = "item", name = "power-armor", amount = 1}
+  },
+  results = {{type = "item", name = "soldier-token-hmg", amount = 1}}
+}
+
 recipes.brigade_hq = {
   type = "recipe",
   name = "brigade-hq",

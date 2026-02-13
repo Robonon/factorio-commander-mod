@@ -11,7 +11,11 @@ data:extend{
   entities.battalion_hq,
   entities.company_hq,
   entities.platoon_hq,
+
   entities.soldier,
+  entities.soldier_smg,
+  entities.soldier_hmg,
+  entities.tank,
 }
 
 -- Register items
@@ -20,7 +24,11 @@ data:extend{
   items.battalion_hq,
   items.company_hq,
   items.platoon_hq,
+
   items.soldier_token,
+  items.soldier_token_smg,
+  items.soldier_token_hmg,
+  items.tank,
 }
 
 -- Register recipes
@@ -29,7 +37,11 @@ data:extend{
   recipes.battalion_hq,
   recipes.company_hq,
   recipes.platoon_hq,
+
   recipes.soldier_token,
+  recipes.soldier_token_smg,
+  recipes.soldier_token_hmg,
+  -- recipes.tank,
 }
 
 -- Register custom input

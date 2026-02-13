@@ -16,11 +16,24 @@ local INTEGRITY = {
 
 local PATHFINDER_FLAGS = {
     allow_destroy_friendly_entities = false,
-    allow_paths_through_own_entities = true,
-    cache = false,
+    allow_paths_through_own_entities = false,
+    cache = true,
     prefer_straight_paths = true,
     low_priority = false,
     no_break = true,
+}
+
+UNITS = {
+    SOLDIER = "soldier-unit",
+    SOLDIER_SMG = "soldier-smg-unit",
+    SOLDIER_HMG = "soldier-hmg-unit",
+    TANK = "tank-unit",
+}
+
+local SQUAD_COMPOSITION = {
+    [UNITS.SOLDIER] = 0,
+    [UNITS.SOLDIER_SMG] = 7,
+    [UNITS.SOLDIER_HMG] = 1,
 }
 -- ============================================
 -- STORAGE INITIALIZATION
@@ -35,18 +48,10 @@ end
 -- SQUAD MANAGEMENT
 -- ============================================
 
-function M.create_squads_for_platoon(surface, position, force, platoon_id, num_squads)
-  local squad_ids = {}
-  for i = 1, num_squads do
-    table.insert(squad_ids, M.create_squad(surface, position, force, platoon_id))
-  end
-  return squad_ids
-end
-
 function M.create_squad(surface, position, force, platoon_id)
 
   -- Find spawn position
-  local spawn_pos = surface.find_non_colliding_position("soldier-unit", position, 10, 0.5)
+  local spawn_pos = surface.find_non_colliding_position("soldier-hmg-unit", position, 10, 0.5)
   if not spawn_pos then
     game.print("Could not find spawn position for squad!")
     spawn_pos = position  -- fallback to exact position
@@ -68,20 +73,12 @@ function M.create_squad(surface, position, force, platoon_id)
   
   -- Create soldiers and add to group in a circle around spawn point
   local soldiers = {}
-  local angle_step = (2 * math.pi) / SOLDIERS_PER_SQUAD
-  for j = 1, SOLDIERS_PER_SQUAD do
-    -- Offset search position in a circle (2 tile radius)
-    local angle = angle_step * (j - 1)
-    local search_pos = {
-      x = spawn_pos.x + math.cos(angle) * 2,
-      y = spawn_pos.y + math.sin(angle) * 2,
-    }
-    local soldier_pos = surface.find_non_colliding_position("soldier-unit", search_pos, 5, 0.5)
-    if soldier_pos then
+  for unit_name, count in pairs(SQUAD_COMPOSITION) do
+    for i = 1, count do
       local soldier = surface.create_entity({
-        name = "soldier-unit",
-        position = soldier_pos,
-        force = force,
+          name = unit_name,
+          position = spawn_pos,
+          force = force,
       })
       if soldier and soldier.valid then
         table.insert(soldiers, soldier)
@@ -120,14 +117,14 @@ function M.reinforce_squad(squad_id)
     end
     hq_inventory.remove({name = "soldier-token", count = 1})
 
-    local spawn_pos = surface.find_non_colliding_position("soldier-unit", squad_data.hq_position, HQ_REINFORCEMENT_RADIUS, 0.5)
+    local spawn_pos = surface.find_non_colliding_position("soldier-smg-unit", squad_data.hq_position, HQ_REINFORCEMENT_RADIUS, 0.5)
     if not spawn_pos then
       game.print("Could not find spawn position for reinforcement!")
       return false
     end
     
     local soldier = surface.create_entity({
-      name = "soldier-unit",
+      name = "soldier-smg-unit",
       position = spawn_pos,
       force = force,
     })
@@ -149,15 +146,18 @@ function M.cleanup(squad_id)
     if not squad_data then return end
     
     -- Unit group is still valid - nothing to clean up
+    if squad_data.unit_group ~= nil then
+      return
+    end
     if squad_data.unit_group and squad_data.unit_group.valid then
-        return
+      return
     end
     
     -- Unit group invalid - try to recover with surviving soldiers
     local surviving_soldiers = {}
     if squad_data.soldiers then
         for _, soldier in pairs(squad_data.soldiers) do
-            if soldier and soldier.valid then
+            if soldier and soldier.valid and soldier.unit_group ~= nil then
                 -- Only take soldiers not already in a valid group
                 if not soldier.unit_group or not soldier.unit_group.valid then
                     table.insert(surviving_soldiers, soldier)
@@ -372,6 +372,7 @@ end
 -- ============================================
 
 function M.on_ai_command_completed(event)
+  if event.was_distracted then return end
   local squad_data = M.get_valid_squad(event.unit_number)
   if not squad_data then return end
   M.update_integrity(event.unit_number)
@@ -407,7 +408,7 @@ end
 
 function M.try_recover_soldier(event)
     local soldier = event.unit
-    if soldier and soldier.valid and soldier.name == "soldier-unit" then
+    if soldier and soldier.valid and contains(UNITS, soldier.name) then
         event.group.add_member(soldier)
     end
 end
@@ -555,11 +556,20 @@ end
 function M.get_valid_squad(squad_id)
     local squad_data = storage.squads[squad_id]
     if not squad_data then return end
-    if not squad_data.unit_group or not squad_data.unit_group.valid then 
+    if not squad_data.unit_group == nil or not squad_data.unit_group.valid then 
         M.cleanup(squad_id)
         return nil 
     end
     return squad_data
+end
+
+function contains(array, item)
+  for _, value in ipairs(array) do
+    if value == item then
+      return true
+    end
+  end
+  return false
 end
 
 return M

@@ -214,7 +214,7 @@ function M.on_chart_tag_added(event)
     if not event.tag or not event.tag.valid then return end
     local hq = storage.HQ[tonumber(event.tag.text)]
     if not hq or not hq.entity or not hq.entity.valid or not hq.entity.unit_number then return end
-    game.print("Received command for HQ " .. hq.entity.name .. " [" .. hq.entity.unit_number .. "] to attack position (" .. event.tag.position.x .. ", " .. event.tag.position.y .. ")")
+    game.print("Received command for HQ " .. hq.tag_id .. " to attack position (" .. event.tag.position.x .. ", " .. event.tag.position.y .. ")")
     M.issue_unit_attack(hq.entity.unit_number, event.tag.position)
 end
 
@@ -261,7 +261,6 @@ function M.command_unit(event)
     local player = game.get_player(event.player_index)
     if not player or not player.valid then return end
     local hq = storage.selected[event.player_index]
-    game.print(serpent.block(hq))
     if not hq or not hq.entity or not hq.entity.valid then return end
     M.issue_unit_attack(hq.entity.unit_number, event.cursor_position)
     player.print("Issuing command " .. hq.entity.name .. " [" .. hq.tag_id .. "] to attack position (" .. event.cursor_position.x .. ", " .. event.cursor_position.y .. ")")

@@ -13,6 +13,37 @@ items.soldier_token = {
   stack_size = 100
 }
 
+items.soldier_token_smg = {
+  type = "item",
+  name = "soldier-token-smg",
+  icon = "__base__/graphics/icons/heavy-armor.png",
+  icon_size = 64,
+  subgroup = "military-equipment",
+  order = "a[military]-b[token-smg]",
+  stack_size = 100
+}
+
+items.soldier_token_hmg = {
+  type = "item",
+  name = "soldier-token-hmg",
+  icon = "__base__/graphics/icons/power-armor.png",
+  icon_size = 64,
+  subgroup = "military-equipment",
+  order = "a[military]-c[token-hmg]",
+  stack_size = 100
+}
+
+items.tank = {
+  type = "item",
+  name = "tank-unit",
+  icon = "__base__/graphics/icons/tank.png",
+  icon_size = 64,
+  subgroup = "military-equipment",
+  order = "b[military]-a[tank]",
+  place_result = "tank-unit",
+  stack_size = 5
+}
+
 -- Brigade HQ building item (top-level)
 items.brigade_hq = {
   type = "item",
