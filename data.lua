@@ -26,9 +26,9 @@ data:extend{
   items.platoon_hq,
 
   items.soldier_token,
-  items.soldier_token_smg,
-  items.soldier_token_hmg,
-  items.tank,
+  -- items.soldier_token_smg,
+  -- items.soldier_token_hmg,
+  -- items.tank,
 }
 
 -- Register recipes
@@ -39,8 +39,8 @@ data:extend{
   recipes.platoon_hq,
 
   recipes.soldier_token,
-  recipes.soldier_token_smg,
-  recipes.soldier_token_hmg,
+  -- recipes.soldier_token_smg,
+  -- recipes.soldier_token_hmg,
   -- recipes.tank,
 }
 
