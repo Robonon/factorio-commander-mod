@@ -175,7 +175,11 @@ function gui.update_tags()
         }
         local existing_tag = storage.tags[squad_id]
         if existing_tag then existing_tag.destroy() end
-        storage.tags[squad_id] = squad_data.unit_group.force.add_chart_tag(squad_data.unit_group.surface, squad_tag)
+        if not squad_data.unit_group.members or #squad_data.unit_group.members == 0 then 
+          storage.tags[squad_id] = nil
+        else
+          storage.tags[squad_id] = squad_data.unit_group.force.add_chart_tag(squad_data.unit_group.surface, squad_tag)
+        end
       end 
     end
       ::continue::
@@ -234,14 +238,25 @@ end
 
 function gui.on_destroyed(event)
   local tag = storage.tags[event.entity.unit_number]
-  if tag then tag.destroy() end
-  storage.tags[event.entity.unit_number] = nil
-  if event.entity and event.entity.name == "platoon-hq" then
+  if tag then 
+    tag.destroy() 
+    storage.tags[event.entity.unit_number] = nil
+  end
+  if event.entity and event.entity.name == HQ_TYPES.PLATOON then
     for squad_id, squad_data in pairs(storage.squads or {}) do
       if squad_data and squad_data.platoon_id == event.entity.unit_number then
         local tag = storage.tags[squad_id]
         if tag then tag.destroy() end
         storage.tags[squad_id] = nil
+      end
+    end
+  elseif contains(UNITS, event.entity.name) then
+    if not event.entity.unit_group or not event.entity.unit_group.valid then return end
+    if not event.entity.unit_group.members or #event.entity.unit_group.members == 0 then
+      local tag = storage.tags[event.entity.unit_group.unique_id]
+      if tag then 
+        storage.tags[event.entity.unit_group.unique_id] = nil
+        tag.destroy() 
       end
     end
   end
